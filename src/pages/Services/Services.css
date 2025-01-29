@@ -1,129 +1,117 @@
+/* Services.css */
 .services-page {
-  padding: 4rem 2rem;
   max-width: 1200px;
   margin: 0 auto;
-  background-color: #f8f9fa;
+  padding: 2rem;
 }
 
-/* Hero Section */
 .services-hero {
-  text-align: center;
-  margin-bottom: 5rem;
-  padding: 3rem 0;
   background: linear-gradient(135deg, #0061f2 0%, #00ba88 100%);
+  padding: 3rem 2rem;
+  border-radius: 12px;
+  text-align: center;
   color: white;
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 3rem;
 }
 
 .services-hero h1 {
   font-size: 3rem;
-  margin-bottom: 1.5rem;
-  font-weight: 700;
+  margin-bottom: 1rem;
 }
 
-.services-hero p {
-  font-size: 1.25rem;
-  max-width: 600px;
-  margin: 0 auto;
-  opacity: 0.9;
-}
-
-/* PDF Converter Section */
+/* File Upload Section Styling */
 .converter-section {
   background: white;
   border-radius: 12px;
-  padding: 2.5rem;
+  padding: 3rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
   margin: 2rem 0;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
 }
 
-.converter-section h2 {
+.pdf-converter h2 {
   color: #2d3748;
   font-size: 2rem;
   margin-bottom: 1.5rem;
-  text-align: center;
 }
 
-/* Domain Processing Section */
-.domain-section {
-  background: white;
+.upload-container {
+  border: 2px dashed #e2e8f0;
   border-radius: 12px;
-  padding: 2.5rem;
+  padding: 3rem 2rem;
   margin: 2rem 0;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+  background: #f8fafc;
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
-.domain-section h2 {
-  color: #2d3748;
-  font-size: 2rem;
-  margin-bottom: 2rem;
+.upload-container:hover {
+  border-color: #0061f2;
+  background: #f0f7ff;
 }
 
-.domain-section ul {
-  list-style: none;
-  padding: 0;
+.upload-container.drag-active {
+  border-color: #0061f2;
+  background: #e6f0ff;
 }
 
-.domain-section li {
-  padding: 1rem;
-  margin: 0.5rem 0;
-  background: #f8f9fa;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  color: #4a5568;
-  transition: transform 0.2s ease;
-}
-
-.domain-section li:hover {
-  transform: translateX(10px);
-  background: #edf2f7;
-}
-
-/* Convert Button */
-.convert-button {
+.browse-button {
   background: #0061f2;
   color: white;
   padding: 0.75rem 2rem;
+  border-radius: 6px;
   border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.browse-button:hover {
+  background: #0052cc;
+  transform: translateY(-2px);
+}
+
+.convert-button {
+  background: #00ba88;
+  color: white;
+  padding: 1rem 3rem;
   border-radius: 8px;
+  border: none;
   font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 97, 242, 0.2);
+  margin-top: 2rem;
 }
 
 .convert-button:hover {
-  background: #0052cc;
+  background: #00a67c;
   transform: translateY(-2px);
-  box-shadow: 0 6px 8px rgba(0, 97, 242, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 186, 136, 0.2);
 }
 
-/* File Upload Area */
-.file-upload {
-  border: 2px dashed #cbd5e0;
-  border-radius: 10px;
-  padding: 2rem;
-  text-align: center;
-  margin: 2rem 0;
-  transition: all 0.3s ease;
+.file-info {
+  margin-top: 1rem;
+  color: #4a5568;
 }
 
-.file-upload:hover {
-  border-color: #0061f2;
+/* Processing Status */
+.processing-status {
+  margin-top: 2rem;
+  padding: 1rem;
+  border-radius: 8px;
   background: #f7fafc;
 }
 
-@media screen and (max-width: 768px) {
-  .services-page {
-    padding: 2rem 1rem;
-  }
-  
-  .services-hero h1 {
-    font-size: 2.25rem;
-  }
-  
-  .services-hero p {
-    font-size: 1.1rem;
-  }
+.progress-bar {
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #0061f2;
+  transition: width 0.3s ease;
 }

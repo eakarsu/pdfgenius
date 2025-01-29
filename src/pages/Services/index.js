@@ -1,5 +1,6 @@
 import React from 'react';
 import PDFConverter from '../../components/PDFConverter';
+import './Services.css';
 
 export default function Services() {
   return (

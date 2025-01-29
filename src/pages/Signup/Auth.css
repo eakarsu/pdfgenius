@@ -112,32 +112,31 @@
 
 .auth-divider {
   text-align: center;
-  margin: 1.5rem 0;
+  margin: 2rem 0;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 
 .auth-divider::before,
 .auth-divider::after {
   content: '';
-  position: absolute;
-  top: 50%;
-  width: 45%;
+  flex: 1;
   height: 1px;
-  background-color: #ddd;
+  background: #ddd;
+  margin: 0 1rem;
 }
 
-.auth-divider::before {
-  left: 0;
-}
-
-.auth-divider::after {
-  right: 0;
-}
 
 .auth-divider span {
-  background-color: white;
-  padding: 0 1rem;
   color: #666;
+  background: white;
+  padding: 0 1rem;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
 }
 
 .social-auth {

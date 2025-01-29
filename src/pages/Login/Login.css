@@ -110,35 +110,36 @@
   cursor: not-allowed;
 }
 
-.login-divider {
+.login-divider, .auth-divider {
   text-align: center;
-  margin: 1.5rem 0;
+  margin: 2rem 0;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.login-divider::before,
-.login-divider::after {
+.login-divider::before, 
+.login-divider::after,
+.auth-divider::before,
+.auth-divider::after {
   content: '';
-  position: absolute;
-  top: 50%;
-  width: 45%;
+  flex: 1;
   height: 1px;
-  background-color: #ddd;
+  background: #ddd;
+  margin: 0 1rem;
 }
 
-.login-divider::before {
-  left: 0;
-}
-
-.login-divider::after {
-  right: 0;
-}
-
-.login-divider span {
-  background-color: white;
-  padding: 0 1rem;
+.login-divider span,
+.auth-divider span {
   color: #666;
+  background: white;
+  padding: 0 1rem;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
 }
+
 
 .social-login {
   display: flex;

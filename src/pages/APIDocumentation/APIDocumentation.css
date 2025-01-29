@@ -1,0 +1,153 @@
+
+.api-documentation {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .api-sidebar {
+    position: sticky;
+    top: 80px;
+    height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+  
+  .api-sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .api-sidebar nav li {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .api-sidebar nav li:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .api-sidebar nav li.active {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .api-content {
+    padding: 0 2rem;
+  }
+  
+  .api-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .api-content h2 {
+    font-size: 2rem;
+    margin: 2rem 0 1rem;
+  }
+  
+  .api-content h3 {
+    font-size: 1.5rem;
+    margin: 1.5rem 0 1rem;
+  }
+  
+  .api-content p {
+    line-height: 1.6;
+    color: #666;
+    margin-bottom: 1rem;
+  }
+  
+  .code-example {
+    margin: 1.5rem 0;
+    background-color: #282a36;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .endpoint-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .method {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+  
+  .method.get {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  .method.post {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .method.put {
+    background-color: #ffc107;
+    color: white;
+  }
+  
+  .method.delete {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .parameters-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+  
+  .parameters-table th,
+  .parameters-table td {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    text-align: left;
+  }
+  
+  .parameters-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+  }
+  
+  code {
+    font-family: 'Source Code Pro', monospace;
+    background-color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  
+  @media screen and (max-width: 968px) {
+    .api-documentation {
+      grid-template-columns: 1fr;
+    }
+  
+    .api-sidebar {
+      display: none;
+    }
+  
+    .api-content {
+      padding: 0;
+    }
+  }

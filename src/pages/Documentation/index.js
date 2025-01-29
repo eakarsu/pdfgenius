@@ -1,32 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './Documentation.css';
 
 export default function Documentation() {
-  const [activeSection, setActiveSection] = useState('getting-started');
-
   return (
     <div className="documentation-page">
       <aside className="documentation-sidebar">
         <nav>
           <ul>
-            <li 
-              className={activeSection === 'getting-started' ? 'active' : ''}
-              onClick={() => setActiveSection('getting-started')}
-            >
-              Getting Started
-            </li>
-            <li 
-              className={activeSection === 'pdf-to-json' ? 'active' : ''}
-              onClick={() => setActiveSection('pdf-to-json')}
-            >
-              PDF to JSON
-            </li>
-            <li 
-              className={activeSection === 'api-reference' ? 'active' : ''}
-              onClick={() => setActiveSection('api-reference')}
-            >
-              API Reference
-            </li>
+            <li>Getting Started</li>
+            <li>Features</li>
+            <li>Usage Guide</li>
           </ul>
         </nav>
       </aside>
@@ -34,36 +17,55 @@ export default function Documentation() {
       <main className="documentation-content">
         <h2>Getting Started with PDFGenius</h2>
         <p>Welcome to PDFGenius documentation. This guide will help you get started with our PDF processing services.</p>
-        
-        <h3>Quick Start</h3>
-        <ol>
-          <li>Sign up for a PDFGenius account</li>
-          <li>Get your API key from the dashboard</li>
-          <li>Choose your integration method</li>
-          <li>Start processing documents</li>
-        </ol>
 
-        <h3>Installation</h3>
-        <pre><code>
-          npm install pdfgenius-sdk
-          # or
-          yarn add pdfgenius-sdk
-        </code></pre>
+        <section className="doc-section">
+          <h3>Features</h3>
+          <ul>
+            <li>Convert PDF documents to structured JSON</li>
+            <li>AI-powered text extraction</li>
+            <li>Support for multiple document types</li>
+            <li>Real-time processing status</li>
+          </ul>
+        </section>
 
-        <h3>Basic Usage</h3>
-        <pre><code>
-          import { PDFGenius } from 'pdfgenius-sdk';
-          const client = new PDFGenius('YOUR_API_KEY');
-          const result = await client.convertToJSON('path/to/document.pdf');
-        </code></pre>
+        <section className="doc-section">
+          <h3>Usage Guide</h3>
+          <ol>
+            <li>Upload your PDF document using the file selector</li>
+            <li>Click the "Convert" button to start processing</li>
+            <li>Wait for the conversion to complete</li>
+            <li>Download your JSON result</li>
+          </ol>
+        </section>
+
+        <section className="doc-section">
+          <h3>Supported Document Types</h3>
+          <ul>
+            <li>Business documents</li>
+            <li>Legal contracts</li>
+            <li>Financial statements</li>
+            <li>General text documents</li>
+          </ul>
+        </section>
+
+        <section className="doc-section">
+          <h3>Best Practices</h3>
+          <ul>
+            <li>Use clear, legible PDFs for best results</li>
+            <li>Ensure documents are not password protected</li>
+            <li>Keep files under the maximum size limit</li>
+            <li>Allow processing to complete before downloading</li>
+          </ul>
+        </section>
       </main>
 
       <aside className="documentation-toc">
         <h4>On this page</h4>
         <ul>
-          <li><a href="#quick-start">Quick Start</a></li>
-          <li><a href="#installation">Installation</a></li>
-          <li><a href="#basic-usage">Basic Usage</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#usage-guide">Usage Guide</a></li>
+          <li><a href="#supported-documents">Supported Documents</a></li>
+          <li><a href="#best-practices">Best Practices</a></li>
         </ul>
       </aside>
     </div>

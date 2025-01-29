@@ -9,7 +9,9 @@ import Contact from './pages/Contact';
 import Blog from './pages/Blog';
 import Pricing from './pages/Pricing';
 import Documentation from './pages/Documentation';
-
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+  
 function App() {
   return (
     <Router>

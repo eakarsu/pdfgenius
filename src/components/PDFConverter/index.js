@@ -73,7 +73,8 @@ export default function PDFConverter() {
           ]
         }, {
           headers: {
-            'Authorization': `Bearer ${process.env.REACT_APP_OPENROUTER_KEY}`,
+            //'Authorization': `Bearer ${process.env.REACT_APP_OPENROUTER_KEY}`,
+            'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_KEY}`,
             'HTTP-Referer': window.location.origin,
             'Content-Type': 'application/json'
           }

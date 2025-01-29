@@ -1,147 +1,181 @@
+/* Contact Page Styling */
 .contact-page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 6rem 2rem;
+  padding: 4rem 2rem;
+  background: #ffffff;
 }
 
 .contact-hero {
   text-align: center;
-  margin-bottom: 4rem;
-}
-
-.contact-hero h1 {
-  font-size: 2.5rem;
-  color: #333;
-  margin-bottom: 1rem;
-}
-
-.contact-hero p {
-  color: #666;
-  font-size: 1.2rem;
-}
-
-.contact-container {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 4rem;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #0061f2 0%, #00ba88 100%);
+  color: white;
+  border-radius: 12px;
+  margin-bottom: 3rem;
 }
 
 .contact-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin: 3rem 0;
+}
+
+.contact-card {
+  background: #f8f9fa;
   padding: 2rem;
-  background-color: #f8f9fa;
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
 }
 
-.contact-info h2 {
-  color: #333;
-  margin-bottom: 2rem;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.info-item i {
-  font-size: 1.5rem;
-  color: #007bff;
-  margin-right: 1rem;
-  width: 24px;
-}
-
-.info-item p {
-  color: #666;
-  margin: 0;
+.contact-card:hover {
+  transform: translateY(-5px);
 }
 
 .contact-form {
+  max-width: 600px;
+  margin: 0 auto;
   padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.contact-form input,
-.contact-form textarea {
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group input,
+.form-group textarea {
   width: 100%;
   padding: 0.75rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
   font-size: 1rem;
   transition: border-color 0.3s ease;
 }
 
-.contact-form input:focus,
-.contact-form textarea:focus {
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: #0061f2;
   outline: none;
-  border-color: #007bff;
 }
 
-.contact-form textarea {
-  min-height: 150px;
-  resize: vertical;
-}
-
-.submit-btn {
-  background-color: #007bff;
+.send-message-btn {
+  background: #0061f2;
   color: white;
-  padding: 1rem 2rem;
+  padding: 0.75rem 2rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  width: 100%;
+  transition: all 0.3s ease;
 }
 
-.submit-btn:hover {
-  background-color: #0056b3;
+.send-message-btn:hover {
+  background: #0052cc;
+  transform: translateY(-2px);
 }
 
-.contact-map {
-  margin-top: 4rem;
-  height: 400px;
-  border-radius: 8px;
-  overflow: hidden;
+/* Home Page Second Section and Footer Improvements */
+.features-section {
+  padding: 5rem 2rem;
+  background: #f8f9fa;
 }
 
-@media screen and (max-width: 768px) {
-  .contact-container {
-    grid-template-columns: 1fr;
-  }
-
-  .contact-info {
-    order: 2;
-  }
-
-  .contact-form {
-    order: 1;
-  }
-
-  .contact-map {
-    height: 300px;
-  }
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
 }
 
-@media screen and (max-width: 480px) {
-  .contact-page {
-    padding: 4rem 1rem;
-  }
-
-  .contact-hero h1 {
-    font-size: 2rem;
-  }
-
-  .contact-container {
-    padding: 1rem;
-  }
-
-  .contact-info,
-  .contact-form {
-    padding: 1rem;
-  }
+.feature-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
 }
 
+.feature-card:hover {
+  transform: translateY(-5px);
+}
+
+.testimonials-section {
+  padding: 5rem 2rem;
+  background: white;
+}
+
+.testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.testimonial-card {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.testimonial-quote {
+  font-size: 1.1rem;
+  color: #2d3748;
+  margin-bottom: 1.5rem;
+}
+
+.testimonial-author {
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.testimonial-position {
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+/* Footer Styling */
+.footer {
+  background: #1a202c;
+  color: white;
+  padding: 4rem 2rem;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-column h3 {
+  color: white;
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+}
+
+.footer-column a {
+  color: #a0aec0;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 0.75rem;
+  transition: color 0.3s ease;
+}
+
+.footer-column a:hover {
+  color: white;
+}
+
+.copyright {
+  text-align: center;
+  padding-top: 3rem;
+  color: #a0aec0;
+  border-top: 1px solid #2d3748;
+  margin-top: 3rem;
+}

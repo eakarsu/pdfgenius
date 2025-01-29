@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './Contact.css';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -8,59 +9,83 @@ export default function Contact() {
     message: ''
   });
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Add your form submission logic here
+    // Add form submission logic here
+    console.log('Form submitted:', formData);
   };
 
   return (
     <div className="contact-page">
       <section className="contact-hero">
-        <h1>Contact Us</h1>
-        <p>Get in touch with our team</p>
+        <h1>Get in Touch</h1>
+        <p>We'd love to hear from you</p>
       </section>
 
-      <div className="contact-container">
-        <div className="contact-info">
-          <h2>Contact Information</h2>
-          <div className="info-item">
-            <i className="fas fa-envelope"></i>
-            <p>support@yourcompany.com</p>
-          </div>
-          <div className="info-item">
-            <i className="fas fa-phone"></i>
-            <p>+1 (555) 123-4567</p>
-          </div>
+      <div className="contact-info">
+        <div className="contact-card">
+          <h3>Email Us</h3>
+          <p>support@yourcompany.com</p>
         </div>
+        <div className="contact-card">
+          <h3>Call Us</h3>
+          <p>+1 (555) 123-4567</p>
+        </div>
+      </div>
 
-        <form className="contact-form" onSubmit={handleSubmit}>
+      <form className="contact-form" onSubmit={handleSubmit}>
+        <div className="form-group">
           <input
             type="text"
+            name="name"
             placeholder="Your Name"
             value={formData.name}
-            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            onChange={handleChange}
+            required
           />
+        </div>
+        <div className="form-group">
           <input
             type="email"
+            name="email"
             placeholder="Your Email"
             value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            onChange={handleChange}
+            required
           />
+        </div>
+        <div className="form-group">
           <input
             type="text"
+            name="subject"
             placeholder="Subject"
             value={formData.subject}
-            onChange={(e) => setFormData({...formData, subject: e.target.value})}
+            onChange={handleChange}
+            required
           />
+        </div>
+        <div className="form-group">
           <textarea
+            name="message"
             placeholder="Your Message"
             value={formData.message}
-            onChange={(e) => setFormData({...formData, message: e.target.value})}
-          ></textarea>
-          <button type="submit" className="submit-btn">Send Message</button>
-        </form>
-      </div>
+            onChange={handleChange}
+            rows="5"
+            required
+          />
+        </div>
+        <button type="submit" className="send-message-btn">
+          Send Message
+        </button>
+      </form>
     </div>
   );
 }
-

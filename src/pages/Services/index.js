@@ -6,16 +6,17 @@ export default function Services() {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    setSelectedFile(file);
+    if (file && file.type === 'application/pdf') {
+      setSelectedFile(file);
+      console.log('File selected:', file.name);
+    }
   };
 
   const handleConvert = async () => {
-    if (!selectedFile) {
-      return;
-    }
+    if (!selectedFile) return;
     try {
-      // Add conversion logic here
       console.log('Converting file:', selectedFile.name);
+      // Add conversion logic here
     } catch (error) {
       console.error('Conversion error:', error);
     }
@@ -55,7 +56,7 @@ export default function Services() {
           </div>
 
           <button 
-            className="convert-button" 
+            className={`convert-button ${selectedFile ? 'active' : ''}`}
             disabled={!selectedFile}
             onClick={handleConvert}
           >

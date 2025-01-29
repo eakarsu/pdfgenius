@@ -51,8 +51,8 @@ export default function PDFConverter() {
       const base64Images = await convertPdfToBase64Images(file);
       let allData = [];
       
-      //const apiKey = process.env.REACT_APP_OPENROUTER_KEY;
-      const apiKey =   import.meta.env.VITE_OPENROUTER_KEY
+      const apiKey = process.env.REACT_APP_OPENROUTER_KEY;
+      //const apiKey =   import.meta.env.VITE_OPENROUTER_KEY
       if (!apiKey) {
           console.error('API key is not defined');
           return;

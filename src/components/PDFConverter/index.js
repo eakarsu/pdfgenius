@@ -51,6 +51,14 @@ export default function PDFConverter() {
       const base64Images = await convertPdfToBase64Images(file);
       let allData = [];
       
+      const apiKey = process.env.REACT_APP_OPENROUTER_KEY;
+      if (!apiKey) {
+          console.error('API key is not defined');
+          return;
+      }else {
+          console.error('API key Defined')
+      }
+
       for (let i = 0; i < base64Images.length; i++) {
         const aiResponse = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
           model: "anthropic/claude-3-sonnet-20240229",
@@ -74,7 +82,7 @@ export default function PDFConverter() {
         }, {
           headers: {
             //'Authorization': `Bearer ${process.env.REACT_APP_OPENROUTER_KEY}`,
-            'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_KEY}`,
+            'Authorization': `Bearer ${apiKey}`,
             'HTTP-Referer': window.location.origin,
             'Content-Type': 'application/json'
           }

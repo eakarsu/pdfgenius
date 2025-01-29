@@ -1,7 +1,7 @@
 // src/components/PDFConverter/index.js
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Document, Page, pdfjs } from 'react-pdf';
+import { pdfjs } from 'react-pdf';
 import './PDFConverter.css';
 
 // Configure PDF.js worker

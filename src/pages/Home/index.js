@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import HeroSection from '../../components/HeroSection';
-import FeatureSection from '../../components/FeatureSection';
+
 import TestimonialSection from '../../components/TestimonialSection';
 
 export default function Home() {

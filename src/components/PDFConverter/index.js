@@ -104,31 +104,32 @@ export default function PDFConverter() {
       setLoading(false);
     }
   };
-
   return (
-    <div className="pdf-converter">
-      <div className="converter-header">
-        <img src="/lowes-logo.png" alt="Company Logo" className="logo" />
-        <h2>PDF to JSON Converter</h2>
-        <p>Upload your PDF document to convert it to structured JSON data</p>
-      </div>
-      
-      <div className="upload-section">
+    <div className="converter-container">
+      <div className="file-upload-area">
         <input 
           type="file" 
+          id="fileInput" 
           accept=".pdf"
+          style={{ display: 'none' }}
           onChange={handleFileUpload}
-          className="file-input"
         />
-        <button 
-          onClick={processFile} 
-          disabled={!file || loading}
-          className="convert-button"
-        >
-          {loading ? 'Processing...' : 'Convert to JSON'}
-        </button>
+        <label htmlFor="fileInput" className="browse-button">
+          Browse...
+        </label>
+        <div className="file-status">
+          {file ? file.name : 'No file selected'}
+        </div>
       </div>
-
+  
+      <button 
+        className="convert-button"
+        disabled={!file || loading}
+        onClick={processFile}
+      >
+        {loading ? 'Converting...' : 'Convert to JSON'}
+      </button>
+  
       {result && (
         <div className="results-section">
           {result.map((page, index) => {
@@ -170,4 +171,6 @@ export default function PDFConverter() {
       )}
     </div>
   );
+  
+  
 }

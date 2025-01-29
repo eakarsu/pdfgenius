@@ -1,27 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
+import PDFConverter from '../../components/PDFConverter';
 import './Services.css';
 
 export default function Services() {
-  const [selectedFile, setSelectedFile] = useState(null);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type === 'application/pdf') {
-      setSelectedFile(file);
-      console.log('File selected:', file.name);
-    }
-  };
-
-  const handleConvert = async () => {
-    if (!selectedFile) return;
-    try {
-      console.log('Converting file:', selectedFile.name);
-      // Add conversion logic here
-    } catch (error) {
-      console.error('Conversion error:', error);
-    }
-  };
-
   return (
     <div className="services-page">
       <section className="services-hero">
@@ -34,34 +15,7 @@ export default function Services() {
         <p>Convert any PDF document into structured JSON data</p>
         
         <div className="converter-container">
-          <div className="company-logo">
-            <h2>PDF to JSON Converter</h2>
-            <p>Upload your PDF document to convert it to structured JSON data</p>
-          </div>
-          
-          <div className="file-upload-area">
-            <input 
-              type="file" 
-              id="fileInput" 
-              accept=".pdf"
-              style={{ display: 'none' }}
-              onChange={handleFileChange}
-            />
-            <label htmlFor="fileInput" className="browse-button">
-              Browse...
-            </label>
-            <div className="file-status">
-              {selectedFile ? selectedFile.name : 'No file selected'}
-            </div>
-          </div>
-
-          <button 
-            className={`convert-button ${selectedFile ? 'active' : ''}`}
-            disabled={!selectedFile}
-            onClick={handleConvert}
-          >
-            Convert to JSON
-          </button>
+          <PDFConverter />
         </div>
       </section>
 

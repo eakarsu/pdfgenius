@@ -1,7 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './Services.css';
 
 export default function Services() {
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setSelectedFile(file);
+  };
+
+  const handleConvert = async () => {
+    if (!selectedFile) {
+      return;
+    }
+    try {
+      // Add conversion logic here
+      console.log('Converting file:', selectedFile.name);
+    } catch (error) {
+      console.error('Conversion error:', error);
+    }
+  };
+
   return (
     <div className="services-page">
       <section className="services-hero">
@@ -25,16 +44,20 @@ export default function Services() {
               id="fileInput" 
               accept=".pdf"
               style={{ display: 'none' }}
+              onChange={handleFileChange}
             />
             <label htmlFor="fileInput" className="browse-button">
               Browse...
             </label>
-            <div className="file-status">No file selected</div>
+            <div className="file-status">
+              {selectedFile ? selectedFile.name : 'No file selected'}
+            </div>
           </div>
 
           <button 
             className="convert-button" 
-            disabled
+            disabled={!selectedFile}
+            onClick={handleConvert}
           >
             Convert to JSON
           </button>

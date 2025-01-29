@@ -8,47 +8,41 @@ export default function Footer() {
       <div className="footer-container">
         <div className="footer-section">
           <h3>PDFGenius</h3>
-          <p>Transform your PDF documents with the power of AI</p>
+          <p>Transform your PDF documents into structured, actionable data using advanced AI technology.</p>
           <div className="social-links">
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-              <i className="fab fa-twitter"></i>
-            </a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
-              <i className="fab fa-linkedin"></i>
-            </a>
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer">
-              <i className="fab fa-github"></i>
-            </a>
+            <a href="#"><i className="fab fa-twitter"></i></a>
+            <a href="#"><i className="fab fa-linkedin"></i></a>
+            <a href="#"><i className="fab fa-github"></i></a>
           </div>
         </div>
 
         <div className="footer-section">
-          <h4>Product</h4>
+          <h4>Quick Links</h4>
           <ul>
+            <li><Link to="/">Home</Link></li>
             <li><Link to="/services">Services</Link></li>
-            <li><Link to="/pricing">Pricing</Link></li>
-            <li><Link to="/docs">Documentation</Link></li>
-            <li><Link to="/api">API</Link></li>
-          </ul>
-        </div>
-
-        <div className="footer-section">
-          <h4>Company</h4>
-          <ul>
-            <li><Link to="/about">About Us</Link></li>
+            <li><Link to="/documentation">Documentation</Link></li>
             <li><Link to="/contact">Contact</Link></li>
-            <li><Link to="/blog">Blog</Link></li>
-            <li><Link to="/careers">Careers</Link></li>
           </ul>
         </div>
 
         <div className="footer-section">
-          <h4>Legal</h4>
+          <h4>Services</h4>
           <ul>
-            <li><Link to="/privacy">Privacy Policy</Link></li>
-            <li><Link to="/terms">Terms of Service</Link></li>
-            <li><Link to="/security">Security</Link></li>
-            <li><Link to="/compliance">Compliance</Link></li>
+            <li><Link to="/services">PDF to JSON</Link></li>
+            <li><Link to="/services">Data Extraction</Link></li>
+            <li><Link to="/services">Document Processing</Link></li>
+            <li><Link to="/services">AI Solutions</Link></li>
+          </ul>
+        </div>
+
+        <div className="footer-section">
+          <h4>Contact Us</h4>
+          <ul>
+            <li>Email: support@pdfgenius.com</li>
+            <li>Phone: +1 (555) 123-4567</li>
+            <li>Address: 123 Tech Street</li>
+            <li>City, State 12345</li>
           </ul>
         </div>
       </div>
@@ -59,4 +53,3 @@ export default function Footer() {
     </footer>
   );
 }
-

@@ -5,7 +5,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import './PDFConverter.css';
 
 // Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
 export default function PDFConverter() {
   const [file, setFile] = useState(null);

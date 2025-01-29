@@ -115,3 +115,43 @@
   background: #0061f2;
   transition: width 0.3s ease;
 }
+
+.services-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.services-hero {
+  background: linear-gradient(90deg, #0061f2 0%, #00ba88 100%);
+  padding: 4rem 2rem;
+  border-radius: 12px;
+  text-align: center;
+  color: white;
+  margin-bottom: 3rem;
+}
+
+.converter-container {
+  background: white;
+  border-radius: 12px;
+  padding: 3rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  margin: 2rem auto;
+  max-width: 800px;
+}
+
+.file-upload-area {
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
+  padding: 3rem;
+  margin: 2rem auto;
+  background: #f8fafc;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}

@@ -1,5 +1,4 @@
 import React from 'react';
-import PDFConverter from '../../components/PDFConverter';
 import './Services.css';
 
 export default function Services() {
@@ -10,31 +9,48 @@ export default function Services() {
         <p>Powerful PDF Processing Solutions</p>
       </section>
 
-      <section className="service-options">
-        <div className="service-card">
-          <h2>PDF to JSON</h2>
-          <p>Convert any PDF document into structured JSON data</p>
-          <PDFConverter />
-        </div>
+      <section className="pdf-to-json">
+        <h2>PDF to JSON</h2>
+        <p>Convert any PDF document into structured JSON data</p>
+        
+        <div className="converter-container">
+          <div className="company-logo">
+            <h2>PDF to JSON Converter</h2>
+            <p>Upload your PDF document to convert it to structured JSON data</p>
+          </div>
+          
+          <div className="file-upload-area">
+            <input 
+              type="file" 
+              id="fileInput" 
+              accept=".pdf"
+              style={{ display: 'none' }}
+            />
+            <label htmlFor="fileInput" className="browse-button">
+              Browse...
+            </label>
+            <div className="file-status">No file selected</div>
+          </div>
 
-        <div className="service-card">
-          <h2>Domain-Specific Processing</h2>
-          <p>Coming Soon: Specialized document processing for:</p>
-          <ul>
-            <li>Medical Records</li>
-            <li>Legal Documents</li>
-            <li>Financial Reports</li>
-            <li>Technical Documentation</li>
-          </ul>
+          <button 
+            className="convert-button" 
+            disabled
+          >
+            Convert to JSON
+          </button>
         </div>
+      </section>
 
-        <div className="service-card">
-          <h2>Custom Solutions</h2>
-          <p>Need a specific document processing solution?</p>
-          <button className="contact-sales-btn">Contact Sales</button>
-        </div>
+      <section className="domain-specific">
+        <h2>Domain-Specific Processing</h2>
+        <p>Coming Soon: Specialized document processing for:</p>
+        <ul>
+          <li>Medical Records</li>
+          <li>Legal Documents</li>
+          <li>Financial Statements</li>
+          <li>Business Documents</li>
+        </ul>
       </section>
     </div>
   );
 }
-

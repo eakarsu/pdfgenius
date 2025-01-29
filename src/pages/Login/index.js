@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import './Auth.css';
+import './Login.css';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -12,14 +12,20 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
-      // Add your authentication logic here
-      // const response = await loginUser(formData);
+      // Add authentication logic here
       setLoading(false);
       navigate('/dashboard');
     } catch (err) {
@@ -29,24 +35,26 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
+    <div className="login-container">
+      <div className="login-card">
+        <div className="login-header">
           <h2>Welcome Back</h2>
           <p>Sign in to your account to continue</p>
         </div>
 
-        {error && <div className="auth-error">{error}</div>}
+        {error && <div className="login-error">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
             <input
               type="email"
               id="email"
+              name="email"
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={handleChange}
               required
+              placeholder="Enter your email"
             />
           </div>
 
@@ -55,9 +63,11 @@ export default function Login() {
             <input
               type="password"
               id="password"
+              name="password"
               value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              onChange={handleChange}
               required
+              placeholder="Enter your password"
             />
           </div>
 
@@ -65,8 +75,9 @@ export default function Login() {
             <label className="checkbox-label">
               <input
                 type="checkbox"
+                name="rememberMe"
                 checked={formData.rememberMe}
-                onChange={(e) => setFormData({...formData, rememberMe: e.target.checked})}
+                onChange={handleChange}
               />
               Remember me
             </label>
@@ -75,32 +86,34 @@ export default function Login() {
             </Link>
           </div>
 
-          <button type="submit" className="auth-button" disabled={loading}>
+          <button 
+            type="submit" 
+            className="login-button" 
+            disabled={loading}
+          >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <div className="auth-divider">
-          <span>OR</span>
+        <div className="login-divider">
+          <span>Or continue with</span>
         </div>
 
-        <div className="social-auth">
+        <div className="social-login">
           <button className="social-button google">
-            <i className="fab fa-google"></i>
+            <img src="/google-icon.png" alt="Google" />
             Sign in with Google
           </button>
           <button className="social-button github">
-            <i className="fab fa-github"></i>
+            <img src="/github-icon.png" alt="GitHub" />
             Sign in with GitHub
           </button>
         </div>
 
-        <div className="auth-footer">
-          Don't have an account?{' '}
-          <Link to="/signup">Sign up</Link>
+        <div className="login-footer">
+          Don't have an account? <Link to="/signup">Sign up</Link>
         </div>
       </div>
     </div>
   );
 }
-

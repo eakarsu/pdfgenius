@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
 
-function Signup() {
+export default function Signup() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -14,19 +14,26 @@ function Signup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+    
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-
+    
     setLoading(true);
     try {
-      // Add your signup logic here
-      // const response = await registerUser(formData);
+      // Add signup logic here
       setLoading(false);
       navigate('/dashboard');
     } catch (err) {
@@ -40,20 +47,22 @@ function Signup() {
       <div className="auth-card">
         <div className="auth-header">
           <h2>Create Account</h2>
-          <p>Get started with PDFGenius</p>
+          <p>Join PDFGenius to get started</p>
         </div>
 
         {error && <div className="auth-error">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="name">Full Name</label>
             <input
               type="text"
               id="name"
+              name="name"
               value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              onChange={handleChange}
               required
+              placeholder="Enter your full name"
             />
           </div>
 
@@ -62,9 +71,11 @@ function Signup() {
             <input
               type="email"
               id="email"
+              name="email"
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={handleChange}
               required
+              placeholder="Enter your email"
             />
           </div>
 
@@ -73,9 +84,11 @@ function Signup() {
             <input
               type="password"
               id="password"
+              name="password"
               value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              onChange={handleChange}
               required
+              placeholder="Create a password"
             />
           </div>
 
@@ -84,9 +97,11 @@ function Signup() {
             <input
               type="password"
               id="confirmPassword"
+              name="confirmPassword"
               value={formData.confirmPassword}
-              onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+              onChange={handleChange}
               required
+              placeholder="Confirm your password"
             />
           </div>
 
@@ -94,44 +109,43 @@ function Signup() {
             <label className="checkbox-label">
               <input
                 type="checkbox"
+                name="agreeToTerms"
                 checked={formData.agreeToTerms}
-                onChange={(e) => setFormData({...formData, agreeToTerms: e.target.checked})}
+                onChange={handleChange}
                 required
               />
-              I agree to the{' '}
-              <Link to="/terms" target="_blank">Terms of Service</Link>
-              {' '}and{' '}
-              <Link to="/privacy" target="_blank">Privacy Policy</Link>
+              I agree to the Terms and Privacy Policy
             </label>
           </div>
 
-          <button type="submit" className="auth-button" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Create Account'}
+          <button 
+            type="submit" 
+            className="auth-button"
+            disabled={loading || !formData.agreeToTerms}
+          >
+            {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
         </form>
 
         <div className="auth-divider">
-          <span>OR</span>
+          <span>Or sign up with</span>
         </div>
 
         <div className="social-auth">
           <button className="social-button google">
-            <i className="fab fa-google"></i>
-            Sign up with Google
+            <img src="/google-icon.png" alt="Google" />
+            Continue with Google
           </button>
           <button className="social-button github">
-            <i className="fab fa-github"></i>
-            Sign up with GitHub
+            <img src="/github-icon.png" alt="GitHub" />
+            Continue with GitHub
           </button>
         </div>
 
         <div className="auth-footer">
-          Already have an account?{' '}
-          <Link to="/login">Sign in</Link>
+          Already have an account? <Link to="/login">Sign in</Link>
         </div>
       </div>
     </div>
   );
 }
-
-export default Signup;

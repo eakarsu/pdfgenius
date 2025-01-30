@@ -43,17 +43,24 @@ export default function FeatureSection() {
         <p>Powerful features to handle all your document processing needs</p>
       </div>
 
-      <div className="feature-grid">
-        {features.map((feature, index) => (
-          <div key={index} className="feature-card">
-            <div className="feature-icon">
-              <i className={feature.icon}></i>
-            </div>
-            <h3>{feature.title}</h3>
-            <p>{feature.description}</p>
-          </div>
-        ))}
+      <div className="features-grid">
+        <div className="feature-card">
+          <div className="feature-icon">🎯</div>
+          <h3>99% Accuracy</h3>
+          <p>Advanced AI ensures precise extraction of every data point from your PDF documents</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">⚡</div>
+          <h3>90% Faster Processing</h3>
+          <p>Process documents in seconds with our optimized AI extraction pipeline</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">🔍</div>
+          <h3>Complete Data Capture</h3>
+          <p>Extract text, tables, forms and maintain document structure integrity</p>
+        </div>
       </div>
+
     </section>
   );
 }

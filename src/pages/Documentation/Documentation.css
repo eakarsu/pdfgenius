@@ -1,131 +1,144 @@
 /* Documentation.css */
 .documentation-page {
   display: grid;
-  grid-template-columns: 250px 1fr 250px;
-  gap: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem;
-  min-height: calc(100vh - 60px);
-}
-
-.documentation-sidebar {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 1.5rem;
-  position: sticky;
-  top: 20px;
-  height: fit-content;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.documentation-sidebar li {
-  padding: 0.75rem 1rem;
-  margin: 0.5rem 0;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.documentation-content {
-  background: white;
-  padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-}
-
-.documentation-content h2 {
-  font-size: 2.5rem;
-  color: #1a73e8;
-  margin-bottom: 1.5rem;
-}
-
-.documentation-content h3 {
-  font-size: 1.8rem;
-  color: #2d3748;
-  margin: 2rem 0 1rem;
-  border-bottom: 2px solid #e2e8f0;
-  padding-bottom: 0.5rem;
-}
-
-.doc-section {
-  margin: 2.5rem 0;
-  padding: 1.5rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border-left: 4px solid #1a73e8;
-}
-
-/* Footer.css improvements */
-.footer {
-  background: linear-gradient(to right, #1a1a1a, #2d3748);
-  color: #ffffff;
-  padding: 4rem 2rem;
-}
-
-.footer-container {
+  grid-template-columns: 250px 1fr;
+  gap: 3rem;
   max-width: 1200px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 3rem;
+  padding: 2rem;
 }
 
-.footer-section h3 {
-  color: #ffffff;
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  position: relative;
+.doc-sidebar {
+  position: sticky;
+  top: 2rem;
+  height: fit-content;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.footer-section h3:after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 0;
-  width: 50px;
-  height: 3px;
-  background: #1a73e8;
+.doc-nav ul {
+  list-style: none;
+  padding: 0;
 }
 
-.footer-section ul li {
+.doc-nav li {
   margin: 0.75rem 0;
 }
 
-.footer-section a {
-  color: #a0aec0;
+.doc-nav a {
+  color: #4a5568;
   text-decoration: none;
-  transition: color 0.3s ease;
-  display: inline-block;
-}
-
-.footer-section a:hover {
-  color: #ffffff;
-  transform: translateX(5px);
-}
-
-.social-links {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.social-links a {
-  background: rgba(255,255,255,0.1);
   padding: 0.5rem;
-  border-radius: 50%;
+  display: block;
+  border-radius: 4px;
   transition: all 0.3s ease;
 }
 
-.social-links a:hover {
-  background: #1a73e8;
-  transform: translateY(-3px);
+.doc-nav a:hover {
+  background: #f7fafc;
+  color: #0061f2;
 }
 
-.footer-bottom {
-  text-align: center;
-  padding-top: 2rem;
-  margin-top: 3rem;
-  border-top: 1px solid rgba(255,255,255,0.1);
-  color: #a0aec0;
+.doc-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.doc-section {
+  margin-bottom: 4rem;
+}
+
+.doc-section h1 {
+  font-size: 2.5rem;
+  color: #2d3748;
+  margin-bottom: 1.5rem;
+}
+
+.doc-section h2 {
+  font-size: 2rem;
+  color: #2d3748;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.feature-item {
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #0061f2;
+}
+
+.feature-icon {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.steps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  background: #0061f2;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.best-practices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.practice-item {
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.practice-icon {
+  font-size: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .documentation-page {
+    grid-template-columns: 1fr;
+  }
+  
+  .doc-sidebar {
+    position: relative;
+    top: 0;
+  }
 }

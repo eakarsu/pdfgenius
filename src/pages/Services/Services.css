@@ -1,157 +1,241 @@
 /* Services.css */
-.services-page {
-  max-width: 1200px;
-  margin: 0 auto;
+.pdf-to-json {
+  text-align: center;
   padding: 2rem;
 }
 
-.services-hero {
-  background: linear-gradient(135deg, #0061f2 0%, #00ba88 100%);
-  padding: 3rem 2rem;
-  border-radius: 12px;
-  text-align: center;
-  color: white;
-  margin-bottom: 3rem;
+.section-header {
+  margin-bottom: 2rem;
 }
 
-.services-hero h1 {
-  font-size: 3rem;
+.section-header h2 {
+  font-size: 2rem;
+  color: #333;
   margin-bottom: 1rem;
 }
 
-/* File Upload Section Styling */
-.converter-section {
-  background: white;
-  border-radius: 12px;
-  padding: 3rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  margin: 2rem 0;
-}
-
-.pdf-converter h2 {
-  color: #2d3748;
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
-}
-
-.upload-container {
-  border: 2px dashed #e2e8f0;
-  border-radius: 12px;
-  padding: 3rem 2rem;
-  margin: 2rem 0;
-  background: #f8fafc;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.upload-container:hover {
-  border-color: #0061f2;
-  background: #f0f7ff;
-}
-
-.upload-container.drag-active {
-  border-color: #0061f2;
-  background: #e6f0ff;
-}
-
-.browse-button {
-  background: #0061f2;
-  color: white;
-  padding: 0.75rem 2rem;
-  border-radius: 6px;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.browse-button:hover {
-  background: #0052cc;
-  transform: translateY(-2px);
-}
-
-.convert-button {
-  background: #00ba88;
-  color: white;
-  padding: 1rem 3rem;
-  border-radius: 8px;
-  border: none;
+.section-header p {
+  color: #666;
   font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 2rem;
 }
 
-.convert-button:hover {
-  background: #00a67c;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 186, 136, 0.2);
-}
-
-.file-info {
-  margin-top: 1rem;
-  color: #4a5568;
-}
-
-/* Processing Status */
-.processing-status {
-  margin-top: 2rem;
-  padding: 1rem;
-  border-radius: 8px;
-  background: #f7fafc;
-}
-
-.progress-bar {
-  height: 4px;
-  background: #e2e8f0;
-  border-radius: 2px;
-  overflow: hidden;
-  margin: 1rem 0;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background: #0061f2;
-  transition: width 0.3s ease;
-}
-
-.services-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-.services-hero {
-  background: linear-gradient(90deg, #0061f2 0%, #00ba88 100%);
-  padding: 4rem 2rem;
-  border-radius: 12px;
-  text-align: center;
-  color: white;
-  margin-bottom: 3rem;
-}
-
-.converter-container {
-  background: white;
-  border-radius: 12px;
-  padding: 3rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  margin: 2rem auto;
+.converter-wrapper {
   max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem; /* Reduced padding */
+}
+
+
+/* PDFConverter.css */
+.converter-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  width: 100%;
 }
 
 .file-upload-area {
   border: 2px dashed #e2e8f0;
-  border-radius: 12px;
-  padding: 3rem;
-  margin: 2rem auto;
+  border-radius: 8px;
+  padding: 1.5rem; /* Reduced from 3rem */
+  margin: 1rem auto; /* Reduced from 2rem */
   background: #f8fafc;
-  transition: all 0.3s ease;
-  cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
+  min-height: 100px; /* Reduced from 150px */
+  gap: 0.75rem; /* Added to control spacing between elements */
+}
+
+..browse-button {
+  background: #0061f2;
+  color: white;
+  padding: 0.5rem 1.5rem; /* Reduced padding */
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  margin: 0.5rem 0; /* Reduced from 1rem */
+}
+
+.convert-button {
+  margin-top: 0.75rem; /* Reduced from 2rem */
+  padding: 0.5rem 1.5rem; /* Reduced padding */
+}
+
+.convert-button:not(:disabled) {
+  opacity: 1;
+}
+
+.convert-button:disabled {
+  cursor: not-allowed;
+  background: #ccc;
+}
+
+.domain-specific {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: #f8f9fa;
+  margin-top: 3rem;
+}
+
+.domain-specific h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.domain-specific p {
+  color: #666;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.domain-specific ul {
+  list-style: none;
+  padding: 0;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.domain-specific li {
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  color: #444;
+}
+
+/* Services.css */
+.services-hero {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: linear-gradient(90deg, #0061f2 0%, #00ba88 100%);
+  border-radius: 12px;
+  margin-bottom: 3rem;
+}
+
+.hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-content h1 {
+  font-size: 2.5rem;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.hero-content p {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 2rem auto;
+}
+
+.benefit-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+}
+
+.benefit-card:hover {
+  transform: translateY(-5px);
+}
+
+.benefit-card h3 {
+  font-size: 1.5rem;
+  color: #2d3748;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.benefit-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.benefit-card li {
+  padding: 0.75rem 0;
+  color: #4a5568;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.benefit-card li:last-child {
+  border-bottom: none;
+}
+
+@media screen and (max-width: 768px) {
+  .benefits-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.benefits-container {
+  max-width: 1200px;
+  margin: 3rem auto;
+  padding: 0 2rem;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+}
+
+.benefit-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+}
+
+.benefit-card h3 {
+  color: #2d3748;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.benefit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.benefit-icon {
+  font-size: 1.25rem;
+}
+
+.benefit-item p {
+  margin: 0;
+  color: #4a5568;
 }

@@ -1,3 +1,5 @@
+
+/* Home.css */
 .home-page {
   min-height: 100vh;
   background: #ffffff;
@@ -5,7 +7,7 @@
 
 .hero-section {
   background: linear-gradient(135deg, #0061f2 0%, #00ba88 100%);
-  padding: 6rem 2rem;
+  padding: 4rem 2rem;
   text-align: center;
   color: white;
 }
@@ -16,14 +18,14 @@
 }
 
 .hero-content h1 {
-  font-size: 3.5rem;
-  margin-bottom: 1.5rem;
+  font-size: 3rem;
+  margin-bottom: 1rem;
   font-weight: 700;
 }
 
 .hero-content p {
-  font-size: 1.25rem;
-  margin-bottom: 2rem;
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
   opacity: 0.9;
 }
 
@@ -42,6 +44,7 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
+
 
 .features-section {
   padding: 6rem 2rem;

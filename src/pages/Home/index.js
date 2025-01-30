@@ -1,60 +1,64 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import HeroSection from '../../components/HeroSection';
-import TestimonialSection from '../../components/TestimonialSection';
 import './Home.css';
 
 export default function Home() {
   return (
     <div className="home-page">
       <section className="hero-section">
+       
         <div className="hero-content">
-          <h1>Convert PDF to JSON with AI</h1>
-          <p>Transform your PDF documents into structured, actionable data using advanced AI technology</p>
+          <h1>Transform Complex PDFs with Generative AI</h1>
+          <p>Tackle challenging PDF layouts, multi-column text, and mixed content with 99% accuracy using state-of-the-art AI technology</p>
           <Link to="/services" className="cta-button">Try It Now</Link>
         </div>
+
+
       </section>
 
       <section className="features-section">
-        <h2>Why Choose PDFGenius</h2>
-        <div className="features-grid">
-          <div className="feature-card">
-            <div className="feature-icon">🚀</div>
-            <h3>High Accuracy</h3>
-            <p>Advanced AI ensures precise document processing</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">⚡</div>
-            <h3>Fast Processing</h3>
-            <p>Handle multiple documents simultaneously</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">🔒</div>
-            <h3>Secure</h3>
-            <p>Enterprise-grade security for your documents</p>
-          </div>
+      <h2>Why Choose Our AI Solution</h2>
+      <div className="features-grid">
+        <div className="feature-card">
+          <div className="feature-icon">🎯</div>
+          <h3>Enhanced Accuracy</h3>
+          <p>Up to 99% accuracy in extracting data from complex layouts, poor quality scans, and mixed content types</p>
         </div>
-      </section>
-
-      <section className="industries-section">
-        <h2>Specialized Solutions</h2>
-        <div className="industry-grid">
-          <div className="industry-card">
-            <h3>Healthcare</h3>
-            <p>Process medical records and claims efficiently</p>
-          </div>
-          <div className="industry-card">
-            <h3>Legal</h3>
-            <p>Extract data from legal documents and contracts</p>
-          </div>
-          <div className="industry-card">
-            <h3>Finance</h3>
-            <p>Automate financial document processing</p>
-          </div>
+        <div className="feature-card">
+          <div className="feature-icon">⚡</div>
+          <h3>90% Faster Processing</h3>
+          <p>Process multiple documents simultaneously while maintaining perfect accuracy</p>
         </div>
-      </section>
+        <div className="feature-card">
+          <div className="feature-icon">💰</div>
+          <h3>Cost Reduction</h3>
+          <p>Reduce manual data entry costs and free up staff for higher-value tasks</p>
+        </div>
+      </div>
+    </section>
 
-      <TestimonialSection />
+    <section className="industries-section">
+      <h2>Technical Challenges We Solve</h2>
+      <div className="industry-grid">
+        <div className="industry-card">
+          <h3>Layout Complexity</h3>
+          <p>Handle inconsistent layouts, multi-column content, and nested tables with precision</p>
+        </div>
+        <div className="industry-card">
+          <h3>Data Quality</h3>
+          <p>Process poor quality scans and mixed content types while maintaining accuracy</p>
+        </div>
+        <div className="industry-card">
+          <h3>Compliance & Quality</h3>
+          <p>Ensure regulatory compliance with reliable data extraction and validation</p>
+        </div>
+      </div>
+    </section>
+
+
+
+
+
     </div>
   );
 }

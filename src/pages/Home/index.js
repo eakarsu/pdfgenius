@@ -7,11 +7,19 @@ export default function Home() {
     <div className="home-page">
       <section className="hero-section">
        
-        <div className="hero-content">
-          <h1>Transform Complex PDFs with Generative AI</h1>
-          <p>Tackle challenging PDF layouts, multi-column text, and mixed content with 99% accuracy using state-of-the-art AI technology</p>
-          <Link to="/services" className="cta-button">Try It Now</Link>
+      <div className="hero-content">
+        <h1>AI PDF Extraction: Transform Complex Documents Instantly</h1>
+        <h2 className="hero-subtitle">Extract Data from PDFs with 99% Accuracy Using Vision AI</h2>
+        <p>
+          Process multi-column layouts, tables, and scanned documents in seconds. 
+          Get structured JSON data from any PDF format. Try 10 documents free.
+        </p>
+        <div className="hero-cta">
+          <Link to="/services" className="cta-button primary">Start Free Trial</Link>
+          <Link to="/pricing" className="cta-button secondary">View Pricing</Link>
         </div>
+      </div>
+
 
 
       </section>

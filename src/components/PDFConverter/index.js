@@ -137,9 +137,9 @@ export default function PDFConverter() {
 
         if (aiResponse?.choices?.[0]) {
           let pageData = aiResponse.choices[0].message.content;
-
+          console.log ("Response:"+pageData)
           // Add validation and cleaning
-          if (typeof pageData === 'string') {
+          /* if (typeof pageData === 'string') {
             // Remove any single character responses
             if (pageData.length <= 1) {
               throw new Error('Invalid response format');
@@ -155,7 +155,7 @@ export default function PDFConverter() {
               // Handle non-JSON response
               pageData = { error: 'Invalid response format' };
             }
-          }
+          } */
 
           allData.push({
             page: i + 1,

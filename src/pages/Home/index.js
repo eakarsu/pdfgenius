@@ -14,6 +14,7 @@ export default function Home() {
           Process multi-column layouts, tables, and scanned documents in seconds. 
           Get structured JSON data from any PDF format. Try 10 documents free.
         </p>
+        
         <div className="hero-cta">
           <Link to="/services" className="cta-button primary">Start Free Trial</Link>
           <Link to="/pricing" className="cta-button secondary">View Pricing</Link>

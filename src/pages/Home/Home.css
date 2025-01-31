@@ -30,21 +30,36 @@
 }
 
 .cta-button {
-  display: inline-block;
-  padding: 1rem 2.5rem;
-  background: white;
-  color: #0061f2;
+  padding: 14px 32px;
   border-radius: 8px;
   font-weight: 600;
-  text-decoration: none;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
+/* Hover effects */
 .cta-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
+.hero-cta {
+  display: flex;
+  gap: 24px; /* Adds reasonable spacing between buttons */
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.cta-button.primary {
+  background: #2563EB;
+  color: white;
+  border: none;
+}
+
+.cta-button.secondary {
+  background: transparent;
+  color: #2563EB;
+  border: 2px solid #2563EB;
+}
 
 .features-section {
   padding: 6rem 2rem;

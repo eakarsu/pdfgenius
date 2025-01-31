@@ -133,8 +133,30 @@ export default function PDFConverter() {
       for (let i = 0; i < base64Images.length; i++) {
         const aiResponse = await novaPro(base64Images[i],apiKey)
 
+        
+
         if (aiResponse?.choices?.[0]) {
-          const pageData = aiResponse.choices[0].message.content;
+          let pageData = aiResponse.choices[0].message.content;
+
+          // Add validation and cleaning
+          if (typeof pageData === 'string') {
+            // Remove any single character responses
+            if (pageData.length <= 1) {
+              throw new Error('Invalid response format');
+            }
+            // Remove 'json' if it appears at the start
+            pageData = pageData.replace(/^json/, '').trim();
+
+            try {
+              // Attempt to parse if it's a JSON string
+              pageData = JSON.parse(pageData);
+            } catch (e) {
+              console.error('Failed to parse JSON response:', e);
+              // Handle non-JSON response
+              pageData = { error: 'Invalid response format' };
+            }
+          }
+
           allData.push({
             page: i + 1,
             data: pageData

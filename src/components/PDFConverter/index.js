@@ -139,23 +139,19 @@ export default function PDFConverter() {
           let pageData = aiResponse.choices[0].message.content;
           console.log ("Response:"+pageData)
           // Add validation and cleaning
-          /* if (typeof pageData === 'string') {
-            // Remove any single character responses
-            if (pageData.length <= 1) {
-              throw new Error('Invalid response format');
-            }
-            // Remove 'json' if it appears at the start
-            pageData = pageData.replace(/^json/, '').trim();
-
+          if (typeof pageData === 'string') {
+            console.log ("string response")
+            // Remove markdown code block syntax if present
+            pageData = pageData.replace(/^```json\s*/, '')
+            
             try {
-              // Attempt to parse if it's a JSON string
+              // Now try to parse the cleaned string
               pageData = JSON.parse(pageData);
             } catch (e) {
               console.error('Failed to parse JSON response:', e);
-              // Handle non-JSON response
               pageData = { error: 'Invalid response format' };
             }
-          } */
+          }
 
           allData.push({
             page: i + 1,

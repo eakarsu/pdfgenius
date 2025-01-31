@@ -19,6 +19,76 @@ export default function PDFConverter() {
     setFile(file);
   };
 
+  const makeAIRequest = async (model, base64Image, apiKey, customPrompt = null) => {
+    const defaultPrompt = "Extract all information from this document page and return as JSON data. Include any measurements, specifications, and details exactly as shown.";
+    
+    try {
+      const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+        model: model, // e.g., "amazon/nova-pro-v1" or "anthropic/claude-3-sonnet-20240229"
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: customPrompt || defaultPrompt
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Image}`
+                }
+              }
+            ]
+          }
+        ]
+      }, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': window.location.origin,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      return response.data;
+    } catch (error) {
+      console.error('AI Request Error:', error);
+      throw error;
+    }
+  };
+  
+  // Usage examples:
+  // With Nova Pro
+  const novaPro = async (base64Image, apiKey) => {
+    const result = await makeAIRequest(
+      "amazon/nova-pro-v1", 
+      base64Image, 
+      apiKey
+    );
+    return result;
+  };
+  
+  // With Claude Sonnet
+  const claudeSonnet = async (base64Image, apiKey) => {
+    const result = await makeAIRequest(
+      "anthropic/claude-3-sonnet-20240229", 
+      base64Image, 
+      apiKey
+    );
+    return result;
+  };
+  
+  // With custom prompt
+  const customRequest = async (base64Image, apiKey) => {
+    const result = await makeAIRequest(
+      "amazon/nova-pro-v1", 
+      base64Image, 
+      apiKey,
+      "Extract only the table data from this image and return as JSON"
+    );
+    return result;
+  };
+  
   const convertPdfToBase64Images = async (pdfFile) => {
     const pdf = await pdfjs.getDocument(URL.createObjectURL(pdfFile)).promise;
     const images = [];
@@ -61,34 +131,8 @@ export default function PDFConverter() {
       }
 
       for (let i = 0; i < base64Images.length; i++) {
-        const aiResponse = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-          model: "anthropic/claude-3-sonnet-20240229",
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: "Extract all information from this document page and return as JSON data. Include any measurements, specifications, and details exactly as shown."
-                },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: `data:image/jpeg;base64,${base64Images[i]}`
-                  }
-                }
-              ]
-            }
-          ]
-        }, {
-          headers: {
-            //'Authorization': `Bearer ${process.env.REACT_APP_OPENROUTER_KEY}`,
-            'Authorization': `Bearer ${apiKey}`,
-            'HTTP-Referer': window.location.origin,
-            'Content-Type': 'application/json'
-          }
-        });
-        
+        const aiResponse = novaPro(base64Images[i],apiKey)
+
         if (aiResponse.data?.choices?.[0]) {
           const pageData = aiResponse.data.choices[0].message.content;
           allData.push({

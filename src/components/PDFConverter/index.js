@@ -143,7 +143,8 @@ export default function PDFConverter() {
             console.log ("string response")
             // Remove markdown code block syntax if present
             pageData = pageData.replace(/^```json\s*/, '')
-            
+            pageData = pageData.replace(/```$/, '');
+
             try {
               // Now try to parse the cleaned string
               pageData = JSON.parse(pageData);

@@ -144,7 +144,8 @@ export default function PDFConverter() {
             // Remove markdown code block syntax if present
             pageData = pageData.replace(/^```json\s*/, '')
             pageData = pageData.replace(/```$/, '');
-
+            // If parsing fails, clean up escaped characters and retry
+            pageData = pageData.replace(/\\'/g, "'");
             try {
               // Now try to parse the cleaned string
               pageData = JSON.parse(pageData);

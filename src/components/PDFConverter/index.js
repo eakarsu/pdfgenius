@@ -131,10 +131,10 @@ export default function PDFConverter() {
       }
 
       for (let i = 0; i < base64Images.length; i++) {
-        const aiResponse = novaPro(base64Images[i],apiKey)
+        const aiResponse = await novaPro(base64Images[i],apiKey)
 
         if (aiResponse.data?.choices?.[0]) {
-          const pageData = aiResponse.data.choices[0].message.content;
+          const pageData = aiResponse.choices[0].message.content;
           allData.push({
             page: i + 1,
             data: pageData

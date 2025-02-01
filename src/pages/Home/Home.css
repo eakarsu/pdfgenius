@@ -41,7 +41,7 @@
   border: none;
 }
 
-/.cta-button:hover {
+.cta-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(67, 97, 238, 0.15);
   opacity: 0.9;

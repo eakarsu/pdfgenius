@@ -119,48 +119,53 @@ export default function PDFConverter() {
     
     try {
       const base64Images = await convertPdfToBase64Images(file);
-      let allData = [];
-      
       const apiKey = process.env.REACT_APP_OPENROUTER_KEY;
-      //const apiKey =   import.meta.env.VITE_OPENROUTER_KEY
+  
       if (!apiKey) {
-          console.error('API key is not defined');
-          return;
+        console.error('API key is not defined');
+        return;
       }else {
-          console.error('API key Defined')
+        console.error('API key Defined')
       }
-
-      for (let i = 0; i < base64Images.length; i++) {
-        const aiResponse = await novaPro(base64Images[i],apiKey)
-
-        
-
-        if (aiResponse?.choices?.[0]) {
-          let pageData = aiResponse.choices[0].message.content;
-          console.log ("Response:"+pageData)
-          // Add validation and cleaning
-          if (typeof pageData === 'string') {
-            console.log ("string response")
-            // Remove markdown code block syntax if present
-            pageData = pageData.replace(/^```json\s*/, '')
-            pageData = pageData.replace(/```$/, '');
-            // If parsing fails, clean up escaped characters and retry
-            pageData = pageData.replace(/\\'/g, "'");
-            try {
-              // Now try to parse the cleaned string
-              pageData = JSON.parse(pageData);
-            } catch (e) {
-              console.error('Failed to parse JSON response:', e);
-              pageData = { error: 'Invalid response format' };
+  
+      // Create an array of promises for parallel processing
+      const requests = base64Images.map((base64Image, index) => {
+        return novaPro(base64Image, apiKey)
+          .then((aiResponse) => {
+            if (aiResponse?.choices?.[0]) {
+              let pageData = aiResponse.choices[0].message.content;
+              console.log("Response:" + pageData);
+  
+              if (typeof pageData === 'string') {
+                // Clean up the response
+                pageData = pageData.replace(/^```json\s*/, '')
+                                 .replace(/```$/, '')
+                                 .replace(/\\'/g, "'");
+                try {
+                  pageData = JSON.parse(pageData);
+                } catch (e) {
+                  console.error('Failed to parse JSON response:', e);
+                  pageData = { error: 'Invalid response format' };
+                }
+              }
+  
+              return {
+                page: index + 1,
+                data: pageData
+              };
             }
-          }
-
-          allData.push({
-            page: i + 1,
-            data: pageData
+          })
+          .catch((error) => {
+            console.error(`Error processing page ${index + 1}:`, error);
+            return {
+              page: index + 1,
+              data: { error: 'Failed to process page' }
+            };
           });
-        }
-      }
+      });
+  
+      // Wait for all requests to complete in parallel
+      const allData = await Promise.all(requests);
       setResult(allData);
     } catch (error) {
       console.error('Error:', error);
@@ -168,6 +173,7 @@ export default function PDFConverter() {
       setLoading(false);
     }
   };
+  
   return (
     <div className="converter-container">
       <div className="file-upload-area">

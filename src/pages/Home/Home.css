@@ -29,22 +29,27 @@
   opacity: 0.9;
 }
 
+
 .cta-button {
   padding: 14px 32px;
   border-radius: 8px;
   font-weight: 600;
+  text-decoration: none;
   transition: all 0.2s ease;
+  background: #4361ee; /* Same background color for both */
+  color: white; /* Same text color for both */
+  border: none;
 }
 
-/* Hover effects */
-.cta-button:hover {
+/.cta-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 4px 12px rgba(67, 97, 238, 0.15);
+  opacity: 0.9;
 }
 
 .hero-cta {
   display: flex;
-  gap: 24px; /* Adds reasonable spacing between buttons */
+  gap: 24px;
   justify-content: center;
   margin-top: 32px;
 }

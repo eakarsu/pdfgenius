@@ -39,10 +39,10 @@ export default function Footer() {
         <div className="footer-section">
           <h4>Contact Us</h4>
           <ul>
-            <li>Email: support@pdfgenius.com</li>
-            <li>Phone: +1 (555) 123-4567</li>
-            <li>Address: 123 Tech Street</li>
-            <li>City, State 12345</li>
+            <li>Email: support@norshin.com</li>
+            <li>Phone: +1 (804) 360-1120</li>
+            <li>Address: Hampton Woods Dr</li>
+            <li>Henrico VA 23233</li>
           </ul>
         </div>
       </div>

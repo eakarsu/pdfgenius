@@ -37,8 +37,11 @@ export default function Footer() {
         </div>
 
         <div className="footer-section">
-           <Link to="/legal?tab=privacy">Privacy Policy</Link>
-           <Link to="/legal?tab=terms">Terms & Conditions</Link>
+	   <h4>Privacy & Terms and Conditions</h4>
+	   <ul>
+              <li><Link to="/legal?tab=privacy">Privacy Policy</Link></li>
+              <li><Link to="/legal?tab=terms">Terms & Conditions</Link></li>
+           </ul>
       	</div>
 
         <div className="footer-section">

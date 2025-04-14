@@ -11,6 +11,7 @@ import Pricing from './pages/Pricing';
 import Documentation from './pages/Documentation';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Legal from './pages/Legal'; 
   
 function App() {
   return (

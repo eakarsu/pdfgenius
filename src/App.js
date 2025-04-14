@@ -28,6 +28,10 @@ function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/docs" element={<Documentation />} />
+
+	  <Route path="/legal" element={<Legal />} />
+          <Route path="/privacy-policy" element={<Legal initialTab="privacy" />} />
+          <Route path="/terms-and-conditions" element={<Legal initialTab="terms" />} />
         </Routes>
         <Footer />
       </div>

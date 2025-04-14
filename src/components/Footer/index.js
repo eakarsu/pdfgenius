@@ -37,6 +37,11 @@ export default function Footer() {
         </div>
 
         <div className="footer-section">
+           <Link to="/legal?tab=privacy">Privacy Policy</Link>
+           <Link to="/legal?tab=terms">Terms & Conditions</Link>
+      	</div>
+
+        <div className="footer-section">
           <h4>Contact Us</h4>
           <ul>
             <li>Email: support@norshin.com</li>

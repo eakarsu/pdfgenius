@@ -128,27 +128,26 @@ export default function PDFConverter() {
         console.error('API key Defined')
       }
   
+      // Create an array of promises for parallel processing
       const requests = base64Images.map((base64Image, index) => {
-        const itemLabel = fileName.endsWith('.pdf') ? `page ${index + 1}` : `image ${index + 1} (from DOCX)`;
-
-        // Choose your preferred AI model function here
         return novaPro(base64Image, apiKey)
           .then((aiResponse) => {
-              if (aiResponse?.choices?.[0]?.message?.content) {
-                    let itemData = aiResponse.choices[0].message.content;
-                    console.log(`Response for ${itemLabel}:`, itemData);
-                    if (typeof itemData === 'string') {
-                      // Clean up the response
-                      pageData = pageData.replace(/^```json\s*/, '')
-                                      .replace(/```$/, '')
-                                      .replace(/\\'/g, "'");
-                      try {
-                        pageData = JSON.parse(pageData);
-                      } catch (e) {
-                            console.error(`Failed to parse JSON response for ${itemLabel}:`, e, "Raw data:", itemData);
-                            itemData = { error: 'Invalid JSON response format', raw_response: itemData };
-                      }
-                    }
+            if (aiResponse?.choices?.[0]) {
+              let pageData = aiResponse.choices[0].message.content;
+              console.log("Response:" + pageData);
+  
+              if (typeof pageData === 'string') {
+                // Clean up the response
+                pageData = pageData.replace(/^```json\s*/, '')
+                                 .replace(/```$/, '')
+                                 .replace(/\\'/g, "'");
+                try {
+                  pageData = JSON.parse(pageData);
+                } catch (e) {
+                  console.error('Failed to parse JSON response:', e);
+                  pageData = { error: 'Invalid response format' };
+                }
+              }
   
               return {
                 page: index + 1,
@@ -157,7 +156,7 @@ export default function PDFConverter() {
             }
           })
           .catch((error) => {
-            console.error(`Error processing ${itemLabel}:`, error);
+            console.error(`Error processing page ${index + 1}:`, error);
             return {
               page: index + 1,
               data: { error: 'Failed to process page' }
@@ -169,9 +168,7 @@ export default function PDFConverter() {
       const allData = await Promise.all(requests);
       setResult(allData);
     } catch (error) {
-        console.error('Error in processFile:', error);
-        alert(`An error occurred during processing: ${error.message}`);
-        setResult([{ item: 'Processing Error', data: { error: error.message } }]);
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
@@ -183,7 +180,7 @@ export default function PDFConverter() {
         <input 
           type="file" 
           id="fileInput" 
-          accept=".pdf,.docx"
+          accept=".pdf"
           style={{ display: 'none' }}
           onChange={handleFileUpload}
         />

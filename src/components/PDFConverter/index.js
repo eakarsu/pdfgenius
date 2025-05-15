@@ -6,17 +6,30 @@ import './PDFConverter.css';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-//pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
-//pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-export default function PDFConverter() {
+// Get the API URL from environment variables or use a default
+const API_URL = process.env.REACT_APP_API_URL + '/api';
+
+export default function DocumentConverter() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
 
   const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    setFile(file);
+    const selectedFile = event.target.files[0];
+    if (selectedFile) {
+      const fileName = selectedFile.name.toLowerCase();
+      if (fileName.endsWith('.pdf') || fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+        setFile(selectedFile);
+        setResult(null);
+        setError(null);
+      } else {
+        setError("Unsupported file type. Please upload a PDF or Word document (.doc or .docx)");
+        event.target.value = null;
+        setFile(null);
+      }
+    }
   };
 
   const makeAIRequest = async (model, base64Image, apiKey, customPrompt = null) => {
@@ -24,7 +37,7 @@ export default function PDFConverter() {
     
     try {
       const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-        model: model, // e.g., "amazon/nova-pro-v1" or "anthropic/claude-3-sonnet-20240229"
+        model: model,
         messages: [
           {
             role: "user",
@@ -57,34 +70,20 @@ export default function PDFConverter() {
     }
   };
   
-  // Usage examples:
-  // With Nova Pro
+  const metaMaverick = async (base64Image, apiKey) => {
+    const result = await makeAIRequest(
+      "meta-llama/llama-4-maverick:free", 
+      base64Image, 
+      apiKey
+    );
+    return result;
+  };
+
   const novaPro = async (base64Image, apiKey) => {
     const result = await makeAIRequest(
       "amazon/nova-pro-v1", 
       base64Image, 
       apiKey
-    );
-    return result;
-  };
-  
-  // With Claude Sonnet
-  const claudeSonnet = async (base64Image, apiKey) => {
-    const result = await makeAIRequest(
-      "anthropic/claude-3-sonnet-20240229", 
-      base64Image, 
-      apiKey
-    );
-    return result;
-  };
-  
-  // With custom prompt
-  const customRequest = async (base64Image, apiKey) => {
-    const result = await makeAIRequest(
-      "amazon/nova-pro-v1", 
-      base64Image, 
-      apiKey,
-      "Extract only the table data from this image and return as JSON"
     );
     return result;
   };
@@ -113,28 +112,72 @@ export default function PDFConverter() {
     return images;
   };
 
+  // Word document processing function using backend service
+  const convertWordToBase64Images = async (wordFile) => {
+    try {
+      // Create form data for file upload
+      const formData = new FormData();
+      formData.append('document', wordFile);
+      
+      // Send to backend for processing
+      const response = await axios.post(`${API_URL}/convert-document`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      if (response.data && response.data.images) {
+        return response.data.images;
+      } else {
+        throw new Error("Failed to convert Word document to images");
+      }
+    } catch (error) {
+      console.error('Error converting Word document:', error);
+      throw error;
+    }
+  };
+
   const processFile = async () => {
-    if (!file) return;
+    if (!file) {
+      setError("Please select a file first");
+      return;
+    }
+    
     setLoading(true);
+    setResult(null);
+    setError(null);
     
     try {
-      const base64Images = await convertPdfToBase64Images(file);
+      let base64Images = [];
+      const fileName = file.name.toLowerCase();
+      
+      // Process based on file type
+      if (fileName.endsWith('.pdf')) {
+        base64Images = await convertPdfToBase64Images(file);
+      } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+        base64Images = await convertWordToBase64Images(file);
+      } else {
+        throw new Error("Unsupported file type");
+      }
+      
+      if (base64Images.length === 0) {
+        throw new Error("No pages could be extracted from the document");
+      }
+      
       const apiKey = process.env.REACT_APP_OPENROUTER_KEY;
   
       if (!apiKey) {
-        console.error('API key is not defined');
+        setError('API key is not defined');
         return;
-      }else {
-        console.error('API key Defined')
       }
   
       // Create an array of promises for parallel processing
       const requests = base64Images.map((base64Image, index) => {
-        return novaPro(base64Image, apiKey)
+        return metaMaverick(base64Image, apiKey)
           .then((aiResponse) => {
             if (aiResponse?.choices?.[0]) {
               let pageData = aiResponse.choices[0].message.content;
-              console.log("Response:" + pageData);
+              console.log(`Response for page ${index + 1}:`, pageData);
   
               if (typeof pageData === 'string') {
                 // Clean up the response
@@ -144,7 +187,7 @@ export default function PDFConverter() {
                 try {
                   pageData = JSON.parse(pageData);
                 } catch (e) {
-                  console.error('Failed to parse JSON response:', e);
+                  console.error(`Failed to parse JSON for page ${index + 1}:`, e);
                   pageData = { error: 'Invalid response format' };
                 }
               }
@@ -154,6 +197,11 @@ export default function PDFConverter() {
                 data: pageData
               };
             }
+            
+            return {
+              page: index + 1,
+              data: { error: 'No valid response from AI' }
+            };
           })
           .catch((error) => {
             console.error(`Error processing page ${index + 1}:`, error);
@@ -169,6 +217,7 @@ export default function PDFConverter() {
       setResult(allData);
     } catch (error) {
       console.error('Error:', error);
+      setError(error.message || 'An unknown error occurred');
     } finally {
       setLoading(false);
     }
@@ -180,7 +229,7 @@ export default function PDFConverter() {
         <input 
           type="file" 
           id="fileInput" 
-          accept=".pdf"
+          accept=".pdf,.doc,.docx"
           style={{ display: 'none' }}
           onChange={handleFileUpload}
         />
@@ -199,6 +248,8 @@ export default function PDFConverter() {
       >
         {loading ? 'Converting...' : 'Convert to JSON'}
       </button>
+      
+      {error && <div className="error-message">{error}</div>}
   
       {result && (
         <div className="results-section">
@@ -241,6 +292,5 @@ export default function PDFConverter() {
       )}
     </div>
   );
-  
-  
 }
+

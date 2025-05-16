@@ -9,6 +9,10 @@ pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
 // Get the API URL from environment variables or use a default
 const API_URL = process.env.REACT_APP_API_URL + '/api';
+const document_extensions = ['.pdf', '.doc', '.docx', '.docm', '.dot', '.dotx', '.dotm', 
+  '.xls', '.xlsx', '.xlsm', '.xlt', '.xltx', '.xltm', '.xlsb',
+  '.ppt', '.pptx', '.pptm', '.pot', '.potx', '.potm', 
+  '.ppsx', '.ppsm', '.sldx', '.sldm']
 
 export default function DocumentConverter() {
   const [file, setFile] = useState(null);
@@ -20,7 +24,9 @@ export default function DocumentConverter() {
     const selectedFile = event.target.files[0];
     if (selectedFile) {
       const fileName = selectedFile.name.toLowerCase();
-      if (fileName.endsWith('.pdf') || fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+      // Check if the file ends with any of the supported extensions
+      const isSupported = document_extensions.some(ext => fileName.endsWith(ext));
+      if (isSupported) {
         setFile(selectedFile);
         setResult(null);
         setError(null);
@@ -82,6 +88,24 @@ export default function DocumentConverter() {
   const novaPro = async (base64Image, apiKey) => {
     const result = await makeAIRequest(
       "amazon/nova-pro-v1", 
+      base64Image, 
+      apiKey
+    );
+    return result;
+  };
+
+  const googleGemini = async (base64Image, apiKey) => {
+    const result = await makeAIRequest(
+      "google/gemini-2.5-pro-preview", 
+      base64Image, 
+      apiKey
+    );
+    return result;
+  };
+
+  const openaiGPT = async (base64Image, apiKey) => {
+    const result = await makeAIRequest(
+      "openai/gpt-4.1", 
       base64Image, 
       apiKey
     );
@@ -150,12 +174,16 @@ export default function DocumentConverter() {
     try {
       let base64Images = [];
       const fileName = file.name.toLowerCase();
-      
+      // Check if the file ends with any of the supported extensions
+      const isSupported = document_extensions.some(ext => fileName.endsWith(ext));
       // Process based on file type
-      if (fileName.endsWith('.pdf')) {
-        base64Images = await convertPdfToBase64Images(file);
-      } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
-        base64Images = await convertWordToBase64Images(file);
+      if (isSupported){
+        if (fileName.endsWith('.pdf')) {
+          base64Images = await convertPdfToBase64Images(file);
+        } else {
+          base64Images = await convertWordToBase64Images(file);
+        
+        }
       } else {
         throw new Error("Unsupported file type");
       }
@@ -173,7 +201,7 @@ export default function DocumentConverter() {
   
       // Create an array of promises for parallel processing
       const requests = base64Images.map((base64Image, index) => {
-        return metaMaverick(base64Image, apiKey)
+        return openaiGPT(base64Image, apiKey)
           .then((aiResponse) => {
             if (aiResponse?.choices?.[0]) {
               let pageData = aiResponse.choices[0].message.content;
@@ -182,7 +210,7 @@ export default function DocumentConverter() {
               if (typeof pageData === 'string') {
                 // Clean up the response
                 pageData = pageData.replace(/^```json\s*/, '')
-                                 .replace(/```$/, '')
+                                 .replace(/```\s*$/, '')
                                  .replace(/\\'/g, "'");
                 try {
                   pageData = JSON.parse(pageData);
@@ -229,7 +257,7 @@ export default function DocumentConverter() {
         <input 
           type="file" 
           id="fileInput" 
-          accept=".pdf,.doc,.docx"
+          accept={document_extensions}
           style={{ display: 'none' }}
           onChange={handleFileUpload}
         />

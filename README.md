@@ -84,6 +84,9 @@ stop firewalld : sudo systemctl stop firewalld
    nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Address already in use)
    ```
 
+sudo nginx -t
+sudo systemctl restart nginx
+
 The solution involved:
 
 1. **Stopping firewalld** to prevent it from interfering with Docker's network setup and Nginx's port binding

@@ -8,6 +8,7 @@ const cors = require('cors');
 const util = require('util');
 const execPromise = util.promisify(exec);
 
+const API_URL = process.env.REACT_APP_API_URL
 const app = express();
 app.use(cors());
 
@@ -23,7 +24,7 @@ if (!fs.existsSync('outputs')) {
 }
 
 app.use(cors({
-  origin: 'http://localhost:3000', // Your frontend URL
+  origin: API_URL, // Your frontend URL
   credentials: true
 }));
 

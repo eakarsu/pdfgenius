@@ -24,12 +24,14 @@ if (!fs.existsSync('outputs')) {
 
 /*
 app.use(cors({
-  origin: 'http://ec2-18-221-161-221.us-east-2.compute.amazonaws.com:3000',
+  //origin: 'http://ec2-18-221-161-221.us-east-2.compute.amazonaws.com:3000',
+  origin:'http://localhost:3000',
   credentials: true, // If you need to send cookies or authorization headers
   methods: ['GET', 'POST', 'OPTIONS'], // Specify allowed methods
   allowedHeaders: ['Content-Type', 'Authorization'] // Specify allowed headers
 }));
 */
+
 
 // API endpoint to convert documents to images
 app.post('/api/convert-document', upload.single('document'), async (req, res) => {

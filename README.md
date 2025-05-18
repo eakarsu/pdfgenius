@@ -72,3 +72,45 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/t
 
 sudo apt-get install poppler-utils
 sudo apt install libreoffice
+
+You're right - the issue was indeed resolved by a series of troubleshooting steps that led to a key discovery. The critical problem was that you had two conflicting services trying to use port 80:
+
+1. **Firewalld was running** and interfering with network connections, which we discovered when you ran `sudo systemctl list-units --type=service | grep -i fire` and it showed `firewalld.service loaded active running`.
+
+stop firewalld : sudo systemctl stop firewalld
+
+2. **You had a separate Nginx process running in debug mode** with `sudo nginx -g 'daemon off;'` in another terminal. This was binding to port 80, which is why when you tried to start the normal Nginx service, you got the error:
+   ```
+   nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Address already in use)
+   ```
+
+The solution involved:
+
+1. **Stopping firewalld** to prevent it from interfering with Docker's network setup and Nginx's port binding
+2. **Stopping the manual Nginx debug process** that was occupying port 80
+3. **Restarting the Nginx service properly** through systemd
+
+This allowed Nginx to properly bind to port 80, which then enabled Certbot to successfully validate your domain and issue SSL certificates.
+
+The "something strange" that fixed the issue was identifying and resolving these conflicting services. Once port 80 was properly accessible from the internet, Certbot could complete its domain validation challenge, and your HTTPS setup was successful.
+
+This is why your site is now working correctly with HTTPS, and you're seeing the Nginx welcome page at https://www.norshin.com/.
+
+Citations:
+[1] https://pplx-res.cloudinary.com/image/private/user_uploads/24312971/6bcf7a04-cec9-42dd-8763-698a6136fd1b/Screenshot-2025-05-18-at-4.02.26-PM.jpg
+[2] https://pplx-res.cloudinary.com/image/private/user_uploads/24312971/23381a59-df6f-4215-9298-5de1f2730e21/Screenshot-2025-05-18-at-4.01.38-PM.jpg
+[3] https://pplx-res.cloudinary.com/image/private/user_uploads/24312971/466f45da-fb68-47d7-bc2f-cf8ce9615ea1/Screenshot-2025-05-18-at-4.05.16-PM.jpg
+[4] https://pplx-res.cloudinary.com/image/private/user_uploads/24312971/aa58311b-dacd-47e5-bbcc-d4fb5f7d0bec/Screenshot-2025-05-18-at-4.05.08-PM.jpg
+[5] https://stackoverflow.com/questions/47364019/how-to-change-the-port-of-nginx-when-using-with-docker
+[6] https://stackoverflow.com/questions/25970711/what-is-the-difference-between-nginx-daemon-on-off-option/25972320
+[7] https://github.com/nginxinc/docker-nginx/issues/126
+[8] https://serverfault.com/questions/1132431/nginx-address-already-in-use-no-matter-what-port-configured
+[9] https://forums.docker.com/t/unable-to-start-nginx-from-docker-file/60409
+[10] https://www.uptimia.com/questions/how-to-change-the-default-port-for-nginx
+[11] https://serverfault.com/questions/877904/how-to-open-up-a-port-firewall-on-ubunto-internally-and-how-to-verify-it
+[12] https://www.reddit.com/r/docker/comments/1dilkit/debug_docker_network_issue_ft_nginx_proxy_manager/
+[13] https://serverfault.com/questions/1104933/nginx-not-serving-from-port-80-and-443-but-works-on-other-ports
+[14] https://stackoverflow.com/questions/40358923/docker-nginx-disable-default-exposed-port-80/71859687
+
+---
+Answer from Perplexity: pplx.ai/share

@@ -8,7 +8,6 @@ const cors = require('cors');
 const util = require('util');
 const execPromise = util.promisify(exec);
 
-const API_URL = process.env.REACT_APP_API_URL
 const app = express();
 app.use(cors());
 
@@ -23,10 +22,14 @@ if (!fs.existsSync('outputs')) {
   fs.mkdirSync('outputs');
 }
 
+/*
 app.use(cors({
-  origin: API_URL, // Your frontend URL
-  credentials: true
+  origin: 'http://ec2-18-221-161-221.us-east-2.compute.amazonaws.com:3000',
+  credentials: true, // If you need to send cookies or authorization headers
+  methods: ['GET', 'POST', 'OPTIONS'], // Specify allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization'] // Specify allowed headers
 }));
+*/
 
 // API endpoint to convert documents to images
 app.post('/api/convert-document', upload.single('document'), async (req, res) => {

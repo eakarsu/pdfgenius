@@ -139,15 +139,35 @@ export default function DocumentConverter() {
   // Word document processing function using backend service
   const convertWordToBase64Images = async (wordFile) => {
     try {
+      // Log the request details
+      console.log(`Preparing to send request to ${API_URL}/convert-document`);
+      console.log(`File being uploaded:`, {
+        name: wordFile.name,
+        type: wordFile.type,
+        size: `${(wordFile.size / 1024).toFixed(2)} KB`
+      });
+
       // Create form data for file upload
       const formData = new FormData();
       formData.append('document', wordFile);
+
+      // Log the actual request being made
+      console.log(`Sending POST request to ${API_URL}/convert-document`);
       
-      // Send to backend for processing
+      // Add request timeout and more detailed error handling
       const response = await axios.post(`${API_URL}/convert-document`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 60000, // 60 second timeout
+      });
+      
+      // Log successful response
+      console.log(`Response received:`, {
+        status: response.status,
+        statusText: response.statusText,
+        hasImages: !!response.data?.images,
+        imageCount: response.data?.images?.length || 0
       });
       
       if (response.data && response.data.images) {
@@ -156,10 +176,37 @@ export default function DocumentConverter() {
         throw new Error("Failed to convert Word document to images");
       }
     } catch (error) {
-      console.error('Error converting Word document:', error);
+      // Enhanced error logging
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          // The server responded with a status code outside of 2xx range
+          console.error('Server error:', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data
+          });
+        } else if (error.request) {
+          // The request was made but no response was received
+          console.error('Network error - no response received:', {
+            request: error.request,
+            message: error.message
+          });
+        } else {
+          // Something happened in setting up the request
+          console.error('Request setup error:', error.message);
+        }
+        console.error('Axios error config:', {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        });
+      } else {
+        console.error('Non-Axios error:', error);
+      }
       throw error;
     }
   };
+
 
   const processFile = async () => {
     if (!file) {

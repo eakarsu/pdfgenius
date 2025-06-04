@@ -1,213 +1,41 @@
 // src/components/PDFConverter/index.js
 import React, { useState } from 'react';
 import axios from 'axios';
-import { pdfjs } from 'react-pdf';
 import './PDFConverter.css';
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-
 // Get the API URL from environment variables or use a default
-const API_URL = process.env.REACT_APP_API_URL + '/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 const document_extensions = ['.pdf', '.doc', '.docx', '.docm', '.dot', '.dotx', '.dotm', 
   '.xls', '.xlsx', '.xlsm', '.xlt', '.xltx', '.xltm', '.xlsb',
   '.ppt', '.pptx', '.pptm', '.pot', '.potx', '.potm', 
-  '.ppsx', '.ppsm', '.sldx', '.sldm']
+  '.ppsx', '.ppsm', '.sldx', '.sldm'];
 
 export default function DocumentConverter() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [model, setModel] = useState('openai/gpt-4.1');
 
   const handleFileUpload = (event) => {
     const selectedFile = event.target.files[0];
     if (selectedFile) {
       const fileName = selectedFile.name.toLowerCase();
-      // Check if the file ends with any of the supported extensions
       const isSupported = document_extensions.some(ext => fileName.endsWith(ext));
       if (isSupported) {
         setFile(selectedFile);
         setResult(null);
         setError(null);
       } else {
-        setError("Unsupported file type. Please upload a PDF or Word document (.doc or .docx)");
+        setError("Unsupported file type. Please upload a supported document format.");
         event.target.value = null;
         setFile(null);
       }
     }
   };
 
-  const makeAIRequest = async (model, base64Image, apiKey, customPrompt = null) => {
-    const defaultPrompt = "Extract all information from this document page and return as JSON data. Include any measurements, specifications, and details exactly as shown.";
-    console.error('key:', apiKey);
-    try {
-      const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-        model: model,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: customPrompt || defaultPrompt
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${base64Image}`
-                }
-              }
-            ]
-          }
-        ]
-      }, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'HTTP-Referer': window.location.origin,
-          'Content-Type': 'application/json'
-        }
-      });
-  
-      return response.data;
-    } catch (error) {
-      console.error('AI Request Error:', error);
-      throw error;
-    }
-  };
-  
-  const metaMaverick = async (base64Image, apiKey) => {
-    const result = await makeAIRequest(
-      "meta-llama/llama-4-maverick:free", 
-      base64Image, 
-      apiKey
-    );
-    return result;
-  };
-
-  const novaPro = async (base64Image, apiKey) => {
-    const result = await makeAIRequest(
-      "amazon/nova-pro-v1", 
-      base64Image, 
-      apiKey
-    );
-    return result;
-  };
-
-  const googleGemini = async (base64Image, apiKey) => {
-    const result = await makeAIRequest(
-      "google/gemini-2.5-pro-preview", 
-      base64Image, 
-      apiKey
-    );
-    return result;
-  };
-
-  const openaiGPT = async (base64Image, apiKey) => {
-    const result = await makeAIRequest(
-      "openai/gpt-4.1", 
-      base64Image, 
-      apiKey
-    );
-    return result;
-  };
-  
-  const convertPdfToBase64Images = async (pdfFile) => {
-    const pdf = await pdfjs.getDocument(URL.createObjectURL(pdfFile)).promise;
-    const images = [];
-    
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 2.0 });
-      
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-      
-      await page.render({
-        canvasContext: context,
-        viewport: viewport
-      }).promise;
-      
-      images.push(canvas.toDataURL('image/jpeg').split(',')[1]);
-    }
-    
-    return images;
-  };
-
-  // Word document processing function using backend service
-  const convertWordToBase64Images = async (wordFile) => {
-    try {
-      // Log the request details
-      console.log(`Preparing to send request to ${API_URL}/convert-document`);
-      console.log(`File being uploaded:`, {
-        name: wordFile.name,
-        type: wordFile.type,
-        size: `${(wordFile.size / 1024).toFixed(2)} KB`
-      });
-
-      // Create form data for file upload
-      const formData = new FormData();
-      formData.append('document', wordFile);
-
-      // Log the actual request being made
-      console.log(`Sending POST request to ${API_URL}/convert-document`);
-      
-      // Add request timeout and more detailed error handling
-      const response = await axios.post(`${API_URL}/convert-document`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        timeout: 60000, // 60 second timeout
-      });
-      
-      // Log successful response
-      console.log(`Response received:`, {
-        status: response.status,
-        statusText: response.statusText,
-        hasImages: !!response.data?.images,
-        imageCount: response.data?.images?.length || 0
-      });
-      
-      if (response.data && response.data.images) {
-        return response.data.images;
-      } else {
-        throw new Error("Failed to convert Word document to images");
-      }
-    } catch (error) {
-      // Enhanced error logging
-      if (axios.isAxiosError(error)) {
-        if (error.response) {
-          // The server responded with a status code outside of 2xx range
-          console.error('Server error:', {
-            status: error.response.status,
-            statusText: error.response.statusText,
-            data: error.response.data
-          });
-        } else if (error.request) {
-          // The request was made but no response was received
-          console.error('Network error - no response received:', {
-            request: error.request,
-            message: error.message
-          });
-        } else {
-          // Something happened in setting up the request
-          console.error('Request setup error:', error.message);
-        }
-        console.error('Axios error config:', {
-          url: error.config?.url,
-          method: error.config?.method,
-          headers: error.config?.headers
-        });
-      } else {
-        console.error('Non-Axios error:', error);
-      }
-      throw error;
-    }
-  };
-
-
+  // NEW: Use server API instead of local processing
   const processFile = async () => {
     if (!file) {
       setError("Please select a file first");
@@ -219,80 +47,35 @@ export default function DocumentConverter() {
     setError(null);
     
     try {
-      let base64Images = [];
-      const fileName = file.name.toLowerCase();
-      // Check if the file ends with any of the supported extensions
-      const isSupported = document_extensions.some(ext => fileName.endsWith(ext));
-      // Process based on file type
-      if (isSupported){
-        if (fileName.endsWith('.pdf')) {
-          base64Images = await convertPdfToBase64Images(file);
-        } else {
-          base64Images = await convertWordToBase64Images(file);
-        
-        }
-      } else {
-        throw new Error("Unsupported file type");
-      }
-      
-      if (base64Images.length === 0) {
-        throw new Error("No pages could be extracted from the document");
-      }
-      
+      const formData = new FormData();
+      formData.append('document', file);
+      formData.append('customPrompt', customPrompt || '');
+      formData.append('model', model);
+
       const apiKey = process.env.REACT_APP_OPENROUTER_KEY;
-  
-      if (!apiKey) {
-        setError('API key is not defined');
-        return;
-      }
-  
-      // Create an array of promises for parallel processing
-      const requests = base64Images.map((base64Image, index) => {
-        return openaiGPT(base64Image, apiKey)
-          .then((aiResponse) => {
-            if (aiResponse?.choices?.[0]) {
-              let pageData = aiResponse.choices[0].message.content;
-              console.log(`Response for page ${index + 1}:`, pageData);
-  
-              if (typeof pageData === 'string') {
-                // Clean up the response
-                pageData = pageData.replace(/^```json\s*/, '')
-                                 .replace(/```\s*$/, '')
-                                 .replace(/\\'/g, "'");
-                try {
-                  pageData = JSON.parse(pageData);
-                } catch (e) {
-                  console.error(`Failed to parse JSON for page ${index + 1}:`, e);
-                  pageData = { error: 'Invalid response format' };
-                }
-              }
-  
-              return {
-                page: index + 1,
-                data: pageData
-              };
-            }
-            
-            return {
-              page: index + 1,
-              data: { error: 'No valid response from AI' }
-            };
-          })
-          .catch((error) => {
-            console.error(`Error processing page ${index + 1}:`, error);
-            return {
-              page: index + 1,
-              data: { error: 'Failed to process page' }
-            };
-          });
+      
+      const response = await axios.post(`${API_URL}/api/process-document`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'X-API-Key': apiKey // Send API key in header
+        },
+        timeout: 300000 // 5 minute timeout
       });
-  
-      // Wait for all requests to complete in parallel
-      const allData = await Promise.all(requests);
-      setResult(allData);
+
+      if (response.data.success) {
+        setResult(response.data.results);
+      } else {
+        throw new Error(response.data.error || 'Processing failed');
+      }
     } catch (error) {
       console.error('Error:', error);
-      setError(error.message || 'An unknown error occurred');
+      if (error.response) {
+        setError(error.response.data.error || 'Server error occurred');
+      } else if (error.request) {
+        setError('Network error - please check your connection');
+      } else {
+        setError(error.message || 'An unknown error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -304,7 +87,7 @@ export default function DocumentConverter() {
         <input 
           type="file" 
           id="fileInput" 
-          accept={document_extensions}
+          accept={document_extensions.join(',')}
           style={{ display: 'none' }}
           onChange={handleFileUpload}
         />
@@ -314,6 +97,33 @@ export default function DocumentConverter() {
         <div className="file-status">
           {file ? file.name : 'No file selected'}
         </div>
+      </div>
+
+      {/* NEW: Custom prompt input */}
+      <div className="prompt-section">
+        <label htmlFor="customPrompt">Custom Prompt (optional):</label>
+        <textarea
+          id="customPrompt"
+          value={customPrompt}
+          onChange={(e) => setCustomPrompt(e.target.value)}
+          placeholder="Enter custom instructions for AI processing..."
+          rows="3"
+        />
+      </div>
+
+      {/* NEW: Model selection */}
+      <div className="model-section">
+        <label htmlFor="modelSelect">AI Model:</label>
+        <select 
+          id="modelSelect" 
+          value={model} 
+          onChange={(e) => setModel(e.target.value)}
+        >
+          <option value="openai/gpt-4.1">GPT-4.1</option>
+          <option value="google/gemini-2.5-pro-preview">Gemini 2.5 Pro</option>
+          <option value="amazon/nova-pro-v1">Amazon Nova Pro</option>
+          <option value="meta-llama/llama-4-maverick:free">Llama 4 Maverick</option>
+        </select>
       </div>
   
       <button 
@@ -353,7 +163,7 @@ export default function DocumentConverter() {
                           <td className="field-value">
                             {typeof value === 'object' 
                               ? JSON.stringify(value, null, 2)
-                              : value}
+                              : String(value)}
                           </td>
                         </tr>
                       ))}

@@ -6,93 +6,160 @@ const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
 const util = require('util');
+const axios = require('axios');
 const execPromise = util.promisify(exec);
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 
-// Set up file upload
-const upload = multer({ dest: 'uploads/' });
+// Set up file upload with file type validation
+const upload = multer({ 
+  dest: 'uploads/',
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Unsupported file type'), false);
+    }
+  }
+});
 
 // Ensure directories exist
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
-if (!fs.existsSync('outputs')) {
-  fs.mkdirSync('outputs');
-}
+const ensureDirectories = () => {
+  const dirs = ['uploads', 'outputs', 'temp'];
+  dirs.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  });
+};
 
-/*
-app.use(cors({
-  //origin: 'http://ec2-18-221-161-221.us-east-2.compute.amazonaws.com:3000',
-  origin:'http://localhost:3000',
-  credentials: true, // If you need to send cookies or authorization headers
-  methods: ['GET', 'POST', 'OPTIONS'], // Specify allowed methods
-  allowedHeaders: ['Content-Type', 'Authorization'] // Specify allowed headers
-}));
-*/
+ensureDirectories();
 
+// Helper function to clean up files
+const cleanupFiles = (filePaths) => {
+  filePaths.forEach(filePath => {
+    if (fs.existsSync(filePath)) {
+      try {
+        if (fs.statSync(filePath).isDirectory()) {
+          fs.rmSync(filePath, { recursive: true, force: true });
+        } else {
+          fs.unlinkSync(filePath);
+        }
+      } catch (error) {
+        console.error(`Error cleaning up ${filePath}:`, error);
+      }
+    }
+  });
+};
 
-// API endpoint to convert documents to images
-app.post('/api/convert-document', upload.single('document'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No document file provided' });
+// AI processing function
+const makeAIRequest = async (model, base64Image, apiKey, customPrompt = null) => {
+  const defaultPrompt = "Extract all information from this document page and return as JSON data. Include any measurements, specifications, and details exactly as shown.";
+  
+  try {
+    const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+      model: model,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: customPrompt || defaultPrompt
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${base64Image}`
+              }
+            }
+          ]
+        }
+      ]
+    }, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('AI Request Error:', error);
+    throw error;
   }
+};
 
-  const inputPath = req.file.path;
+// Convert document to base64 images
+const convertDocumentToBase64Images = async (filePath, originalName) => {
   const outputDir = path.join('outputs', Date.now().toString());
   
-  // Create output directory if it doesn't exist
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir);
-  }
-
   try {
-    // Get the file extension
-    const fileExt = path.extname(req.file.originalname).toLowerCase();
-    
-    // Step 1: Convert Word document to PDF using LibreOffice
-    // Determine the LibreOffice executable path based on platform
-    const platform = process.platform;
-    let libreofficePath;
-    
-    if (platform === 'darwin') {
-      // macOS path
-      libreofficePath = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
-    } else if (platform === 'linux') {
-      // Linux path
-      libreofficePath = 'libreoffice';
-    } else {
-      throw new Error(`Unsupported platform: ${platform}`);
+    // Create output directory
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
     }
-    
-    await execPromise(`"${libreofficePath}" --convert-to pdf --outdir "${outputDir}" "${inputPath}"`);
-    
-    // Step 2: Convert PDF to images using pdftoppm instead of ImageMagick
-    // After LibreOffice conversion
-    const files2 = fs.readdirSync(outputDir);
-    const pdfFiles = files2.filter(file => file.endsWith('.pdf'));
-    if (pdfFiles.length === 0) {
-      throw new Error('No PDF files found after conversion');
-    }
-    const pdfPath = path.join(outputDir, pdfFiles[0]);
 
-    // Using pdftoppm with 300 DPI for high quality
-    await execPromise(`pdftoppm -jpeg -r 300 "${pdfPath}" "${outputDir}/page"`);
+    const fileExt = path.extname(originalName).toLowerCase();
     
-    // Read all generated images
+    if (fileExt === '.pdf') {
+      // Direct PDF processing using pdftoppm
+      await execPromise(`pdftoppm -jpeg -r 300 "${filePath}" "${outputDir}/page"`);
+    } else {
+      // Convert other documents to PDF first using LibreOffice
+      const platform = process.platform;
+      let libreofficePath;
+      
+      if (platform === 'darwin') {
+        libreofficePath = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+      } else if (platform === 'linux') {
+        libreofficePath = 'libreoffice';
+      } else {
+        throw new Error(`Unsupported platform: ${platform}`);
+      }
+      
+      // Convert to PDF
+      await execPromise(`"${libreofficePath}" --convert-to pdf --outdir "${outputDir}" "${filePath}"`);
+      
+      // Find the generated PDF
+      const files = fs.readdirSync(outputDir);
+      const pdfFiles = files.filter(file => file.endsWith('.pdf'));
+      if (pdfFiles.length === 0) {
+        throw new Error('No PDF files found after conversion');
+      }
+      const pdfPath = path.join(outputDir, pdfFiles[0]);
+
+      // Convert PDF to images
+      await execPromise(`pdftoppm -jpeg -r 300 "${pdfPath}" "${outputDir}/page"`);
+    }
+    
+    // Read generated images
     const files = fs.readdirSync(outputDir);
-    // pdftoppm creates files with format page-01.jpg, page-02.jpg, etc.
     const imageFiles = files.filter(file => file.match(/page-\d+\.jpg/) || file.match(/page\d+\.jpg/));
     
-    // Sort the image files by page number
+    // Sort by page number
     imageFiles.sort((a, b) => {
       const pageA = parseInt(a.match(/\d+/)[0]);
       const pageB = parseInt(b.match(/\d+/)[0]);
       return pageA - pageB;
     });
     
-    // Convert images to base64
+    // Convert to base64
     const images = [];
     for (const imageFile of imageFiles) {
       const imagePath = path.join(outputDir, imageFile);
@@ -100,8 +167,30 @@ app.post('/api/convert-document', upload.single('document'), async (req, res) =>
       images.push(Buffer.from(imageData).toString('base64'));
     }
     
-    // Clean up
-    fs.unlinkSync(inputPath);
+    // Clean up output directory
+    cleanupFiles([outputDir]);
+    
+    return images;
+  } catch (error) {
+    // Clean up on error
+    cleanupFiles([outputDir]);
+    throw error;
+  }
+};
+
+// API endpoint to convert documents to images (existing)
+app.post('/api/convert-document', upload.single('document'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No document file provided' });
+  }
+
+  const inputPath = req.file.path;
+  
+  try {
+    const images = await convertDocumentToBase64Images(inputPath, req.file.originalname);
+    
+    // Clean up uploaded file
+    cleanupFiles([inputPath]);
     
     res.json({ 
       images,
@@ -109,8 +198,115 @@ app.post('/api/convert-document', upload.single('document'), async (req, res) =>
     });
   } catch (error) {
     console.error('Error processing document:', error);
+    cleanupFiles([inputPath]);
     res.status(500).json({ error: 'Document processing failed', details: error.message });
   }
+});
+
+// NEW API endpoint for complete PDF processing with AI
+app.post('/api/process-document', upload.single('document'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No document file provided' });
+  }
+
+  const inputPath = req.file.path;
+  const { customPrompt, model = 'openai/gpt-4.1' } = req.body;
+  
+  try {
+    // Get API key from environment or request headers
+    const apiKey = process.env.REACT_APP_OPENROUTER_KEY || req.headers['x-api-key'];
+    
+    if (!apiKey) {
+      cleanupFiles([inputPath]);
+      return res.status(400).json({ error: 'API key is required' });
+    }
+
+    console.log('Converting document to images...');
+    const base64Images = await convertDocumentToBase64Images(inputPath, req.file.originalname);
+    
+    if (base64Images.length === 0) {
+      cleanupFiles([inputPath]);
+      return res.status(400).json({ error: 'No pages could be extracted from the document' });
+    }
+
+    console.log(`Processing ${base64Images.length} pages with AI...`);
+    
+    // Process all pages in parallel
+    const requests = base64Images.map(async (base64Image, index) => {
+      try {
+        const aiResponse = await makeAIRequest(model, base64Image, apiKey, customPrompt);
+        
+        if (aiResponse?.choices?.[0]) {
+          let pageData = aiResponse.choices[0].message.content;
+          
+          if (typeof pageData === 'string') {
+            // Clean up the response
+	    pageData = pageData.replace(/^```json\s*/, '')
+                                 .replace(/```\s*$/, '')
+                                 .replace(/\\'/g, "'");
+            try {
+              pageData = JSON.parse(pageData);
+            } catch (e) {
+              console.error(`Failed to parse JSON for page ${index + 1}:`, e);
+              pageData = { error: 'Invalid response format', rawResponse: pageData };
+            }
+          }
+
+          return {
+            page: index + 1,
+            data: pageData
+          };
+        }
+        
+        return {
+          page: index + 1,
+          data: { error: 'No valid response from AI' }
+        };
+      } catch (error) {
+        console.error(`Error processing page ${index + 1}:`, error);
+        return {
+          page: index + 1,
+          data: { error: 'Failed to process page', details: error.message }
+        };
+      }
+    });
+
+    const results = await Promise.all(requests);
+    
+    // Clean up uploaded file
+    cleanupFiles([inputPath]);
+
+    res.json({
+      success: true,
+      totalPages: results.length,
+      results: results
+    });
+
+  } catch (error) {
+    console.error('Document processing error:', error);
+    cleanupFiles([inputPath]);
+    res.status(500).json({
+      error: 'Failed to process document',
+      details: error.message
+    });
+  }
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Error handling middleware
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File too large' });
+    }
+  }
+  
+  console.error('Unhandled error:', error);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 // Use environment variable for port or default to 3001
@@ -118,3 +314,4 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+

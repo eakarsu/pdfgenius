@@ -1,10 +1,9 @@
 // src/components/PDFConverter/index.js
 import React, { useState } from 'react';
-import axios from 'axios';
 import './PDFConverter.css';
 
-// Get the API URL from environment variables or use a default
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 const document_extensions = ['.pdf', '.doc', '.docx', '.docm', '.dot', '.dotx', '.dotm', 
   '.xls', '.xlsx', '.xlsm', '.xlt', '.xltx', '.xltm', '.xlsb',
   '.ppt', '.pptx', '.pptm', '.pot', '.potx', '.potm', 
@@ -35,7 +34,6 @@ export default function DocumentConverter() {
     }
   };
 
-  // NEW: Use server API instead of local processing
   const processFile = async () => {
     if (!file) {
       setError("Please select a file first");
@@ -54,28 +52,24 @@ export default function DocumentConverter() {
 
       const apiKey = process.env.REACT_APP_OPENROUTER_KEY;
       
-      const response = await axios.post(`${API_URL}/api/process-document`, formData, {
+      const response = await fetch(`${API_URL}/api/process-document`, {
+        method: 'POST',
         headers: {
-          'Content-Type': 'multipart/form-data',
-          'X-API-Key': apiKey // Send API key in header
+          'X-API-Key': apiKey
         },
-        timeout: 300000 // 5 minute timeout
+        body: formData
       });
 
-      if (response.data.success) {
-        setResult(response.data.results);
+      const data = await response.json();
+
+      if (data.success) {
+        setResult(data.results);
       } else {
-        throw new Error(response.data.error || 'Processing failed');
+        throw new Error(data.error || 'Processing failed');
       }
     } catch (error) {
       console.error('Error:', error);
-      if (error.response) {
-        setError(error.response.data.error || 'Server error occurred');
-      } else if (error.request) {
-        setError('Network error - please check your connection');
-      } else {
-        setError(error.message || 'An unknown error occurred');
-      }
+      setError(error.message || 'An error occurred while processing the document');
     } finally {
       setLoading(false);
     }
@@ -83,59 +77,76 @@ export default function DocumentConverter() {
   
   return (
     <div className="converter-container">
-      <div className="file-upload-area">
-        <input 
-          type="file" 
-          id="fileInput" 
-          accept={document_extensions.join(',')}
-          style={{ display: 'none' }}
-          onChange={handleFileUpload}
-        />
-        <label htmlFor="fileInput" className="browse-button">
-          Browse...
-        </label>
-        <div className="file-status">
-          {file ? file.name : 'No file selected'}
+      <div className="converter-header">
+        <h1>📄 Document AI Processor</h1>
+        <p>Transform your documents into structured JSON data using advanced AI</p>
+      </div>
+
+      <div className="converter-form">
+        <div className="form-section">
+          <div className="section-title">
+            📁 Upload Document
+          </div>
+          <div className="file-upload-area">
+            <input 
+              type="file" 
+              id="fileInput" 
+              accept={document_extensions.join(',')}
+              style={{ display: 'none' }}
+              onChange={handleFileUpload}
+            />
+            <label htmlFor="fileInput" className="browse-button">
+              Choose Document
+            </label>
+            <div className="file-status">
+              {file ? `📄 ${file.name}` : 'No file selected'}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* NEW: Custom prompt input */}
-      <div className="prompt-section">
-        <label htmlFor="customPrompt">Custom Prompt (optional):</label>
-        <textarea
-          id="customPrompt"
-          value={customPrompt}
-          onChange={(e) => setCustomPrompt(e.target.value)}
-          placeholder="Enter custom instructions for AI processing..."
-          rows="3"
-        />
-      </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="modelSelect">🤖 AI Model</label>
+            <select 
+              id="modelSelect" 
+              value={model} 
+              onChange={(e) => setModel(e.target.value)}
+              className="form-select"
+            >
+              <option value="openai/gpt-4.1">GPT-4.1</option>
+              <option value="google/gemini-2.5-pro-preview">Gemini 2.5 Pro</option>
+              <option value="amazon/nova-pro-v1">Amazon Nova Pro</option>
+              <option value="meta-llama/llama-4-maverick:free">Llama 4 Maverick</option>
+            </select>
+          </div>
 
-      {/* NEW: Model selection */}
-      <div className="model-section">
-        <label htmlFor="modelSelect">AI Model:</label>
-        <select 
-          id="modelSelect" 
-          value={model} 
-          onChange={(e) => setModel(e.target.value)}
+          <div className="form-group">
+            <label htmlFor="customPrompt">✨ Custom Instructions</label>
+            <textarea
+              id="customPrompt"
+              value={customPrompt}
+              onChange={(e) => setCustomPrompt(e.target.value)}
+              placeholder="Enter specific instructions for AI processing..."
+              className="form-textarea"
+            />
+          </div>
+        </div>
+
+        <button 
+          className="convert-button"
+          disabled={!file || loading}
+          onClick={processFile}
         >
-          <option value="openai/gpt-4.1">GPT-4.1</option>
-          <option value="google/gemini-2.5-pro-preview">Gemini 2.5 Pro</option>
-          <option value="amazon/nova-pro-v1">Amazon Nova Pro</option>
-          <option value="meta-llama/llama-4-maverick:free">Llama 4 Maverick</option>
-        </select>
+          {loading ? '🔄 Processing...' : '🚀 Process Document'}
+        </button>
+        
+        {error && (
+          <div className="error-message">
+            ⚠️ {error}
+          </div>
+        )}
       </div>
-  
-      <button 
-        className="convert-button"
-        disabled={!file || loading}
-        onClick={processFile}
-      >
-        {loading ? 'Converting...' : 'Convert to JSON'}
-      </button>
-      
-      {error && <div className="error-message">{error}</div>}
-  
+
       {result && (
         <div className="results-section">
           {result.map((page, index) => {
@@ -147,7 +158,7 @@ export default function DocumentConverter() {
             }
             return (
               <div key={index} className="page-content">
-                <h3>Page {page.page}</h3>
+                <h3>📄 Page {page.page}</h3>
                 <div className="data-table">
                   <table>
                     <thead>

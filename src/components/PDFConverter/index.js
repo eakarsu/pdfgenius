@@ -40,7 +40,7 @@ export default function DocumentConverter() {
 
   const makeAIRequest = async (model, base64Image, apiKey, customPrompt = null) => {
     const defaultPrompt = "Extract all information from this document page and return as JSON data. Include any measurements, specifications, and details exactly as shown.";
-    
+    console.key('api key:',apiKey);
     try {
       const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
         model: model,

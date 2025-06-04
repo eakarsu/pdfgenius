@@ -64,8 +64,37 @@ const cleanupFiles = (filePaths) => {
         console.error(`Error cleaning up ${filePath}:`, error);
       }
     }
+    
+    // ✅ NEW: Clean up files with same base name but different extensions
+    try {
+      const dir = path.dirname(filePath);
+      const baseName = path.basename(filePath, path.extname(filePath));
+      
+      // Read directory and find files with matching base name
+      if (fs.existsSync(dir)) {
+        const files = fs.readdirSync(dir);
+        
+        files.forEach(file => {
+          const fullPath = path.join(dir, file);
+          const fileBaseName = path.basename(file, path.extname(file));
+          
+          // If base names match but it's not a directory
+          if (fileBaseName === baseName && fs.statSync(fullPath).isFile()) {
+            try {
+              fs.unlinkSync(fullPath);
+              console.log(`Cleaned up related file: ${fullPath}`);
+            } catch (error) {
+              console.error(`Error cleaning up related file ${fullPath}:`, error);
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error(`Error during extended cleanup for ${filePath}:`, error);
+    }
   });
 };
+
 
 // AI processing function
 const makeAIRequest = async (model, base64Image, apiKey, customPrompt = null) => {
@@ -186,6 +215,14 @@ app.post('/api/convert-document', upload.single('document'), async (req, res) =>
 
   const inputPath = req.file.path;
   
+  const originalName = req.file.originalname;
+  const extension = path.extname(originalName);
+   // Create new path with extension
+  const newPath = inputPath + extension;
+  // Rename file to include extension
+  fs.renameSync(inputPath, newPath);
+  inputPath = newPath
+
   try {
     const images = await convertDocumentToBase64Images(inputPath, req.file.originalname);
     
@@ -209,9 +246,17 @@ app.post('/api/process-document', upload.single('document'), async (req, res) =>
     return res.status(400).json({ error: 'No document file provided' });
   }
 
-  const inputPath = req.file.path;
+  inputPath = req.file.path;
   const { customPrompt, model = 'openai/gpt-4.1' } = req.body;
   
+  const originalName = req.file.originalname;
+  const extension = path.extname(originalName);
+   // Create new path with extension
+  const newPath = inputPath + extension;
+  // Rename file to include extension
+  fs.renameSync(inputPath, newPath);
+  inputPath = newPath
+
   try {
     // Get API key from environment or request headers
     const apiKey = process.env.REACT_APP_OPENROUTER_KEY || req.headers['x-api-key'];

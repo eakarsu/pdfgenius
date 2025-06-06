@@ -13,8 +13,60 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Set up file upload with file type validation
 const upload = multer({ 
+  storage: 'uploads/',  // Use diskStorage instead of dest
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    console.log('File upload attempt:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      fieldname: file.fieldname
+    });
+
+    // Define allowed MIME types
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-word.document.macroEnabled.12',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel.sheet.macroEnabled.12',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/vnd.ms-powerpoint.presentation.macroEnabled.12',
+      'application/octet-stream'  // Sometimes files come as this
+    ];
+    
+    // Define allowed file extensions as backup
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    
+    // Check both MIME type and file extension
+    const isMimeTypeValid = allowedMimeTypes.includes(file.mimetype);
+    const isExtensionValid = allowedExtensions.includes(fileExtension);
+    
+    if (isMimeTypeValid || isExtensionValid) {
+      console.log('File accepted:', file.originalname);
+      cb(null, true);
+    } else {
+      console.log('File rejected:', {
+        mimetype: file.mimetype,
+        extension: fileExtension,
+        filename: file.originalname
+      });
+      
+      const error = new Error(`Unsupported file type: ${fileExtension || file.mimetype}. Allowed types: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX`);
+      error.code = 'UNSUPPORTED_FILE_TYPE';
+      cb(error, false);
+    }
+  }
+});
+
+// Set up file upload with file type validation
+const upload2 = multer({ 
   dest: 'uploads/',
   limits: {
     fileSize: 50 * 1024 * 1024 // 50MB limit

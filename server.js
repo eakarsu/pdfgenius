@@ -13,7 +13,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const upload = multer({ 
+const upload2 = multer({ 
   storage: 'uploads/',  // Use diskStorage instead of dest
   limits: {
     fileSize: 50 * 1024 * 1024 // 50MB limit
@@ -66,7 +66,7 @@ const upload = multer({
 });
 
 // Set up file upload with file type validation
-const upload2 = multer({ 
+const upload = multer({ 
   dest: 'uploads/',
   limits: {
     fileSize: 50 * 1024 * 1024 // 50MB limit

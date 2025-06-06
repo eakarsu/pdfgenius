@@ -13,8 +13,26 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const upload2 = multer({ 
-  storage: 'uploads/',  // Use diskStorage instead of dest
+// Ensure uploads directory exists
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads', { recursive: true });
+}
+
+// Configure multer storage properly
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const extension = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + extension);
+  }
+});
+
+// Create upload middleware with proper storage
+const upload = multer({
+  storage: storage,  // Make sure this is the diskStorage object
   limits: {
     fileSize: 50 * 1024 * 1024 // 50MB limit
   },
@@ -25,26 +43,20 @@ const upload2 = multer({
       fieldname: file.fieldname
     });
 
-    // Define allowed MIME types
     const allowedMimeTypes = [
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-word.document.macroEnabled.12',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel.sheet.macroEnabled.12',
       'application/vnd.ms-powerpoint',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'application/vnd.ms-powerpoint.presentation.macroEnabled.12',
-      'application/octet-stream'  // Sometimes files come as this
+      'application/octet-stream'
     ];
     
-    // Define allowed file extensions as backup
     const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
     const fileExtension = path.extname(file.originalname).toLowerCase();
     
-    // Check both MIME type and file extension
     const isMimeTypeValid = allowedMimeTypes.includes(file.mimetype);
     const isExtensionValid = allowedExtensions.includes(fileExtension);
     
@@ -58,7 +70,7 @@ const upload2 = multer({
         filename: file.originalname
       });
       
-      const error = new Error(`Unsupported file type: ${fileExtension || file.mimetype}. Allowed types: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX`);
+      const error = new Error(`Unsupported file type: ${fileExtension || file.mimetype}`);
       error.code = 'UNSUPPORTED_FILE_TYPE';
       cb(error, false);
     }
@@ -66,7 +78,7 @@ const upload2 = multer({
 });
 
 // Set up file upload with file type validation
-const upload = multer({ 
+const upload2 = multer({ 
   dest: 'uploads/',
   limits: {
     fileSize: 50 * 1024 * 1024 // 50MB limit

@@ -188,11 +188,16 @@ const makeAIRequest = async (model, base64Image, apiKey, customPrompt = null) =>
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
-      }
+      },
+      timeout: 600000  // 60 minutes
     });
 
     return response.data;
   } catch (error) {
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timed out after 60 seconds');
+      throw new Error('AI processing timed out. Please try again.');
+    }
     console.error('AI Request Error:', error);
     throw error;
   }

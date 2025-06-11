@@ -14,9 +14,31 @@ app.use(cors());
 app.use(express.json());
 require('dotenv').config();
 
+const DocumentProcessor = require('./document_processor');
+const processor = new DocumentProcessor();
+
 // Ensure uploads directory exists
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads', { recursive: true });
+}
+
+
+function cleanupDocuments(jsonData) {
+  try {
+    // Clean using the class method
+
+    // 3. Clean results and identify failed pages
+    const cleanedResults = processor.filterEmptyAndErrorDocs(jsonData);
+    const allPages = new Set(jsonData.map(p => p.page));
+    const cleanedPages = new Set(cleanedResults.map(p => p.page));
+    const failedPages = [...allPages].filter(page => !cleanedPages.has(page));
+
+    return [cleanedResults,failedPages];
+
+  } catch (error) {
+    console.error('❌ Cleanup failed:', error.message);
+    throw error;
+  }
 }
 
 // Configure multer storage properly
@@ -54,13 +76,13 @@ const upload = multer({
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       'application/octet-stream'
     ];
-    
+
     const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
     const fileExtension = path.extname(file.originalname).toLowerCase();
-    
+
     const isMimeTypeValid = allowedMimeTypes.includes(file.mimetype);
     const isExtensionValid = allowedExtensions.includes(fileExtension);
-    
+
     if (isMimeTypeValid || isExtensionValid) {
       console.log('File accepted:', file.originalname);
       cb(null, true);
@@ -70,7 +92,7 @@ const upload = multer({
         extension: fileExtension,
         filename: file.originalname
       });
-      
+
       const error = new Error(`Unsupported file type: ${fileExtension || file.mimetype}`);
       error.code = 'UNSUPPORTED_FILE_TYPE';
       cb(error, false);
@@ -79,7 +101,7 @@ const upload = multer({
 });
 
 // Set up file upload with file type validation
-const upload2 = multer({ 
+const upload2 = multer({
   dest: 'uploads/',
   limits: {
     fileSize: 50 * 1024 * 1024 // 50MB limit
@@ -94,7 +116,7 @@ const upload2 = multer({
       'application/vnd.ms-powerpoint',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation'
     ];
-    
+
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -129,20 +151,20 @@ const cleanupFiles = (filePaths) => {
         console.error(`Error cleaning up ${filePath}:`, error);
       }
     }
-    
+
     // ✅ NEW: Clean up files with same base name but different extensions
     try {
       const dir = path.dirname(filePath);
       const baseName = path.basename(filePath, path.extname(filePath));
-      
+
       // Read directory and find files with matching base name
       if (fs.existsSync(dir)) {
         const files = fs.readdirSync(dir);
-        
+
         files.forEach(file => {
           const fullPath = path.join(dir, file);
           const fileBaseName = path.basename(file, path.extname(file));
-          
+
           // If base names match but it's not a directory
           if (fileBaseName === baseName && fs.statSync(fullPath).isFile()) {
             try {
@@ -162,7 +184,7 @@ const cleanupFiles = (filePaths) => {
 
 
 const makeAIRequestBatchAsync = async (model, base64Images, apiKey, customPrompt = null, maxImagesPerBatch = 3, maxConcurrentBatches = 2, maxRetries = 2) => {
- 
+
   const defaultPrompt = "Extract all information from this document page as flat JSON structure. Include complete text transcription, measurements, specifications, numerical data, section titles, contract elements (CLINs, dates, amounts), and key details. Return data directly without nested 'data' objects. Use single page_number field matching actual page. CRITICAL: Only return results if page contains readable text - completely skip pages with empty content, blank arrays, or no extractable data. Return valid JSON only with no explanations.";
 
   // Create batches (assuming this logic exists before)
@@ -178,16 +200,16 @@ const makeAIRequestBatchAsync = async (model, base64Images, apiKey, customPrompt
   }
 
   console.log(`Processing ${base64Images.length} images in ${batches.length} batches with max ${maxConcurrentBatches} concurrent requests`);
-  
+
   const allResults = [];
-  
+
   // Enhanced batch processing function with retry logic
   const processBatchWithRetry = async (batchData, retryCount = 0) => {
     const { images, startPage, endPage, batchIndex } = batchData;
-    
+
     try {
       console.log(`Starting batch ${batchIndex + 1}: pages ${startPage}-${endPage}${retryCount > 0 ? ` (retry ${retryCount})` : ''}`);
-      
+
       // Build content array with prompt and images
       const content = [
         {
@@ -227,7 +249,7 @@ Process these ${images.length} pages of the government contract. Return an array
       });
 
       console.log(`Completed batch ${batchIndex + 1}: pages ${startPage}-${endPage}${retryCount > 0 ? ` (retry ${retryCount} successful)` : ''}`);
-      
+
       return {
         batch: batchIndex + 1,
         startPage: startPage,
@@ -241,11 +263,11 @@ Process these ${images.length} pages of the government contract. Return an array
 
     } catch (error) {
       console.error(`Error processing batch ${batchIndex + 1} (pages ${startPage}-${endPage})${retryCount > 0 ? ` (retry ${retryCount})` : ''}:`, error.message);
-      
+
       // Handle specific error types
       let errorType = 'unknown';
       let shouldRetry = false;
-      
+
       if (error.response?.status === 402) {
         errorType = 'payment_required';
       } else if (error.response?.status === 429) {
@@ -261,15 +283,15 @@ Process these ${images.length} pages of the government contract. Return an array
         errorType = 'server_error';
         shouldRetry = true;
       }
-      
+
       // Retry logic for specific error types
       if (shouldRetry && retryCount < maxRetries) {
         const delayMs = Math.pow(2, retryCount) * 3000; // Exponential backoff: 3s, 6s, 12s
-        console.log(`Retrying batch ${batchIndex + 1} in ${delayMs/1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`);
+        console.log(`Retrying batch ${batchIndex + 1} in ${delayMs / 1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
         return await processBatchWithRetry(batchData, retryCount + 1);
       }
-      
+
       return {
         batch: batchIndex + 1,
         startPage: startPage,
@@ -283,19 +305,19 @@ Process these ${images.length} pages of the government contract. Return an array
       };
     }
   };
-  
+
   // Process batches in groups to limit concurrency
   for (let i = 0; i < batches.length; i += maxConcurrentBatches) {
     const batchGroup = batches.slice(i, i + maxConcurrentBatches);
     console.log(`Processing batch group ${Math.floor(i / maxConcurrentBatches) + 1}/${Math.ceil(batches.length / maxConcurrentBatches)} with ${batchGroup.length} concurrent requests`);
-    
+
     // Create promises for this group of batches with retry logic
     const promises = batchGroup.map(batchData => processBatchWithRetry(batchData));
 
     // Wait for all batches in this group to complete
     const batchGroupResults = await Promise.all(promises);
     allResults.push(...batchGroupResults);
-    
+
     // Add delay between batch groups to avoid overwhelming the API
     if (i + maxConcurrentBatches < batches.length) {
       console.log(`Waiting 5 seconds before next batch group...`);
@@ -305,20 +327,20 @@ Process these ${images.length} pages of the government contract. Return an array
 
   // Sort results by batch number to maintain order
   allResults.sort((a, b) => a.batch - b.batch);
-  
+
   // Enhanced logging with retry information
   const successfulBatches = allResults.filter(r => r.success).length;
   const failedBatches = allResults.filter(r => !r.success).length;
   const retriedBatches = allResults.filter(r => r.retryCount > 0).length;
-  
+
   console.log(`Batch processing complete: ${successfulBatches} successful, ${failedBatches} failed, ${retriedBatches} required retries`);
-  
+
   // Log failed batches for debugging
   const failed = allResults.filter(r => !r.success);
   if (failed.length > 0) {
     console.log('Failed batches:', failed.map(f => `Batch ${f.batch} (${f.errorType}): ${f.error}`));
   }
-  
+
   return allResults;
 };
 
@@ -326,7 +348,7 @@ Process these ${images.length} pages of the government contract. Return an array
 // Convert document to base64 images
 const convertDocumentToBase64Images = async (filePath, originalName) => {
   const outputDir = path.join('outputs', Date.now().toString());
-  
+
   try {
     // Create output directory
     if (!fs.existsSync(outputDir)) {
@@ -334,7 +356,7 @@ const convertDocumentToBase64Images = async (filePath, originalName) => {
     }
 
     const fileExt = path.extname(originalName).toLowerCase();
-    
+
     if (fileExt === '.pdf') {
       // Direct PDF processing using pdftoppm
       await execPromise(`pdftoppm -jpeg -r 300 "${filePath}" "${outputDir}/page"`);
@@ -342,7 +364,7 @@ const convertDocumentToBase64Images = async (filePath, originalName) => {
       // Convert other documents to PDF first using LibreOffice
       const platform = process.platform;
       let libreofficePath;
-      
+
       if (platform === 'darwin') {
         libreofficePath = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
       } else if (platform === 'linux') {
@@ -350,10 +372,10 @@ const convertDocumentToBase64Images = async (filePath, originalName) => {
       } else {
         throw new Error(`Unsupported platform: ${platform}`);
       }
-      
+
       // Convert to PDF
       await execPromise(`"${libreofficePath}" --convert-to pdf --outdir "${outputDir}" "${filePath}"`);
-      
+
       // Find the generated PDF
       const files = fs.readdirSync(outputDir);
       const pdfFiles = files.filter(file => file.endsWith('.pdf'));
@@ -365,18 +387,18 @@ const convertDocumentToBase64Images = async (filePath, originalName) => {
       // Convert PDF to images
       await execPromise(`pdftoppm -jpeg -r 300 "${pdfPath}" "${outputDir}/page"`);
     }
-    
+
     // Read generated images
     const files = fs.readdirSync(outputDir);
     const imageFiles = files.filter(file => file.match(/page-\d+\.jpg/) || file.match(/page\d+\.jpg/));
-    
+
     // Sort by page number
     imageFiles.sort((a, b) => {
       const pageA = parseInt(a.match(/\d+/)[0]);
       const pageB = parseInt(b.match(/\d+/)[0]);
       return pageA - pageB;
     });
-    
+
     // Convert to base64
     const images = [];
     for (const imageFile of imageFiles) {
@@ -384,10 +406,10 @@ const convertDocumentToBase64Images = async (filePath, originalName) => {
       const imageData = fs.readFileSync(imagePath);
       images.push(Buffer.from(imageData).toString('base64'));
     }
-    
+
     // Clean up output directory
     cleanupFiles([outputDir]);
-    
+
     return images;
   } catch (error) {
     // Clean up on error
@@ -403,10 +425,10 @@ app.post('/api/convert-document', upload.single('document'), async (req, res) =>
   }
 
   const inputPath = req.file.path;
-  
+
   const originalName = req.file.originalname;
   const extension = path.extname(originalName);
-   // Create new path with extension
+  // Create new path with extension
   const newPath = inputPath + extension;
   // Rename file to include extension
   fs.renameSync(inputPath, newPath);
@@ -414,11 +436,11 @@ app.post('/api/convert-document', upload.single('document'), async (req, res) =>
 
   try {
     const images = await convertDocumentToBase64Images(inputPath, req.file.originalname);
-    
+
     // Clean up uploaded file
     cleanupFiles([inputPath]);
-    
-    res.json({ 
+
+    res.json({
       images,
       message: 'Document processed successfully'
     });
@@ -429,60 +451,17 @@ app.post('/api/convert-document', upload.single('document'), async (req, res) =>
   }
 });
 
-app.post('/api/process-document', upload.single('document'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No document file provided' });
-  }
-
-  let inputPath = req.file.path;
-  const { customPrompt, model = 'openai/gpt-4.1' } = req.body;
-  //const { customPrompt, model = 'qwen/qwen2.5-vl-72b-instruct' } = req.body;
-  //const { customPrompt, model = 'anthropic/claude-sonnet-4' } = req.body;
-  //const { customPrompt, model = 'mistralai/pixtral-large-2411' } = req.body;
-  
-
-  const originalName = req.file.originalname;
-  const extension = path.extname(originalName);
-  // Create new path with extension
-  const newPath = inputPath + extension;
-  // Rename file to include extension
-  fs.renameSync(inputPath, newPath);
-  inputPath = newPath;
-
+const flattenBatchResults = (batchResults, pageResults) => {
+  // Process batch results into page format
   try {
-    // Get API key from environment or request headers
-    const apiKey = process.env.REACT_APP_OPENROUTER_KEY || req.headers['x-api-key'];
-    
-    if (!apiKey) {
-      cleanupFiles([inputPath]);
-      return res.status(400).json({ error: 'API key is required' });
-    }
-
-    console.log('Converting document to images...');
-    const base64Images = await convertDocumentToBase64Images(inputPath, req.file.originalname);
-    
-    if (base64Images.length === 0) {
-      cleanupFiles([inputPath]);
-      return res.status(400).json({ error: 'No pages could be extracted from the document' });
-    }
-
-    console.log(`Processing ${base64Images.length} pages with AI in one request...`);
-    
-    
-    // Use batch processing instead of single request
-    const batchResults = await makeAIRequestBatchAsync(model, base64Images, apiKey, customPrompt, 5,30);
-    
-    // Process batch results into page format
-    const pageResults =                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      [];
-    
     batchResults.forEach(batchResult => {
       if (batchResult.result && batchResult.result.choices && batchResult.result.choices[0]) {
         let content = batchResult.result.choices[0].message.content;
-        
+
         if (typeof content === 'string') {
           content = content.replace(/^.*\s*```json\s*/, '')
-                                 .replace(/```\s*[\s\S]*$/, '')
-                                 .replace(/\\'/g, "'");
+            .replace(/```\s*[\s\S]*$/, '')
+            .replace(/\\'/g, "'");
           try {
             content = JSON.parse(content);
           } catch (e) {
@@ -490,7 +469,7 @@ app.post('/api/process-document', upload.single('document'), async (req, res) =>
             content = [{ error: 'Invalid response format', rawResponse: content }];
           }
         }
-        
+
         if (Array.isArray(content)) {
           content.forEach((pageData, index) => {
             pageResults.push({
@@ -516,17 +495,6 @@ app.post('/api/process-document', upload.single('document'), async (req, res) =>
         }
       }
     });
-    
-    cleanupFiles([inputPath]);
-
-    res.json({
-      success: true,
-      totalPages: base64Images.length,
-      totalBatches: batchResults.length,
-      results: pageResults,
-      processingMethod: 'detailed_batch_analysis'
-    });
-
   } catch (error) {
     console.error('Document processing error:', error);
     cleanupFiles([inputPath]);
@@ -534,30 +502,30 @@ app.post('/api/process-document', upload.single('document'), async (req, res) =>
       error: 'Failed to process document',
       details: error.message
     });
+    return pageResults
   }
-});
+}
 
-// NEW API endpoint for complete PDF processing with AI
-app.post('/api/process-document2', upload.single('document'), async (req, res) => {
+app.post('/api/process-document', upload.single('document'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No document file provided' });
   }
 
-  inputPath = req.file.path;
+  let inputPath = req.file.path;
   const { customPrompt, model = 'openai/gpt-4.1' } = req.body;
-  
+
   const originalName = req.file.originalname;
   const extension = path.extname(originalName);
-   // Create new path with extension
+  // Create new path with extension
   const newPath = inputPath + extension;
   // Rename file to include extension
   fs.renameSync(inputPath, newPath);
-  inputPath = newPath
+  inputPath = newPath;
 
   try {
     // Get API key from environment or request headers
     const apiKey = process.env.REACT_APP_OPENROUTER_KEY || req.headers['x-api-key'];
-    
+
     if (!apiKey) {
       cleanupFiles([inputPath]);
       return res.status(400).json({ error: 'API key is required' });
@@ -565,65 +533,42 @@ app.post('/api/process-document2', upload.single('document'), async (req, res) =
 
     console.log('Converting document to images...');
     const base64Images = await convertDocumentToBase64Images(inputPath, req.file.originalname);
-    
+
     if (base64Images.length === 0) {
       cleanupFiles([inputPath]);
       return res.status(400).json({ error: 'No pages could be extracted from the document' });
     }
 
-    console.log(`Processing ${base64Images.length} pages with AI...`);
-    
-    // Process all pages in parallel
-    const requests = base64Images.map(async (base64Image, index) => {
-      try {
-        const aiResponse = await makeAIRequest(model, base64Image, apiKey, customPrompt);
-        
-        if (aiResponse?.choices?.[0]) {
-          let pageData = aiResponse.choices[0].message.content;
-          
-          if (typeof pageData === 'string') {
-            // Clean up the response
-	    pageData = pageData.replace(/^```json\s*/, '')
-                                 .replace(/```\s*$/, '')
-                                 .replace(/\\'/g, "'");
-            try {
-              pageData = JSON.parse(pageData);
-            } catch (e) {
-              console.error(`Failed to parse JSON for page ${index + 1}:`, e);
-              pageData = { error: 'Invalid response format', rawResponse: pageData };
-            }
-          }
+    console.log(`Processing ${base64Images.length} pages with AI in one request...`);
 
-          return {
-            page: index + 1,
-            data: pageData
-          };
-        }
-        
-        return {
-          page: index + 1,
-          data: { error: 'No valid response from AI' }
-        };
-      } catch (error) {
-        console.error(`Error processing page ${index + 1}:`, error);
-        return {
-          page: index + 1,
-          data: { error: 'Failed to process page', details: error.message }
-        };
-      }
-    });
 
-    const results = await Promise.all(requests);
-    
-    // Clean up uploaded file
+    // Use batch processing instead of single request
+    const batchResults = await makeAIRequestBatchAsync(model, base64Images, apiKey, customPrompt, 5, 30);
+
+    const pageResults = [];
+    // Process batch results into page format
+    flattenBatchResults(batchResults, pageResults)
+    const [cleanedResults,failedPages] = cleanupDocuments(pageResults);
+    // 4. Retry failed pages one by one
+    const retryResults = [];
+    for (const pageNum of failedPages) {
+      const image = base64Images[pageNum - 1]; // adjust index if needed
+      const retryBatchResults = await makeAIRequestBatchAsync(model, [image], apiKey, customPrompt, 1, 1);
+      flattenBatchResults(retryBatchResults, retryResults)
+    }
+    // 5. Merge and clean again
+    const mergedResults = [...cleanedResults, ...retryResults];
+    const finalResults = processor.filterEmptyAndErrorDocs(mergedResults);
     cleanupFiles([inputPath]);
 
     res.json({
       success: true,
-      totalPages: results.length,
-      results: results
+      totalPages: base64Images.length,
+      totalBatches: batchResults.length,
+      retriedPages: failedPages,
+      results: finalResults,
+      processingMethod: 'detailed_batch_analysis'
     });
-
   } catch (error) {
     console.error('Document processing error:', error);
     cleanupFiles([inputPath]);
@@ -631,7 +576,9 @@ app.post('/api/process-document2', upload.single('document'), async (req, res) =
       error: 'Failed to process document',
       details: error.message
     });
+    return pageResults
   }
+
 });
 
 // Health check endpoint
@@ -646,7 +593,7 @@ app.use((error, req, res, next) => {
       return res.status(400).json({ error: 'File too large' });
     }
   }
-  
+
   console.error('Unhandled error:', error);
   res.status(500).json({ error: 'Internal server error' });
 });
@@ -654,6 +601,6 @@ app.use((error, req, res, next) => {
 // Use environment variable for port or default to 3001
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
 

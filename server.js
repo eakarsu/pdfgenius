@@ -22,6 +22,26 @@ if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads', { recursive: true });
 }
 
+// Save original console functions
+const originalLog = console.log.bind(console);
+const originalError = console.error.bind(console);
+
+// Override console.log
+console.log = function() {
+    const timestamp = '[' + new Date().toISOString() + '] ';
+    const args = Array.prototype.slice.call(arguments);
+    args.unshift(timestamp);
+    originalLog.apply(console, args);
+};
+
+// Override console.error
+console.error = function() {
+    const timestamp = '[' + new Date().toISOString() + '] ERROR: ';
+    const args = Array.prototype.slice.call(arguments);
+    args.unshift(timestamp);
+    originalError.apply(console, args);
+};
+
 
 function cleanupDocuments(jsonData) {
   try {
@@ -576,6 +596,7 @@ app.post('/api/process-document', upload.single('document'), async (req, res) =>
       error: 'Failed to process document',
       details: error.message
     });
+    console.log(`Processed ${base64Images.length} pages with AI in one request...`);
     return pageResults
   }
 

@@ -1,97 +1,168 @@
-/* Services.css */
-.pdf-to-json {
-  text-align: center;
-  padding: 2rem;
+/* ============================================
+   Services Page - Professional Design
+   ============================================ */
+
+.services-page {
+  padding-top: 80px;
 }
 
+/* Hero Section */
+.services-hero {
+  text-align: center;
+  padding: var(--space-16) var(--space-6);
+  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-800) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.services-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.5;
+}
+
+.hero-content {
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-content h1 {
+  font-size: var(--text-4xl);
+  color: white;
+  margin-bottom: var(--space-4);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.hero-content p {
+  font-size: var(--text-lg);
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Section Headers */
 .section-header {
-  margin-bottom: 2rem;
+  text-align: center;
+  margin-bottom: var(--space-8);
 }
 
 .section-header h2 {
-  font-size: 2rem;
-  color: #333;
-  margin-bottom: 1rem;
+  font-size: var(--text-3xl);
+  color: var(--gray-900);
+  margin-bottom: var(--space-3);
+  font-weight: 700;
 }
 
 .section-header p {
-  color: #666;
-  font-size: 1.1rem;
+  color: var(--gray-600);
+  font-size: var(--text-lg);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* PDF to JSON Section */
+.pdf-to-json {
+  padding: var(--space-16) var(--space-6);
+  background: var(--gray-50);
 }
 
 .converter-wrapper {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 1rem; /* Reduced padding */
 }
 
+/* Benefits Section */
+.benefits-container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: var(--space-16) var(--space-6);
+}
 
-/* PDFConverter.css */
-.converter-container {
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-6);
+}
+
+.benefit-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-base);
+}
+
+.benefit-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.benefit-card h3 {
+  color: var(--gray-900);
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-5);
+  text-align: center;
+  font-weight: 600;
+}
+
+.benefit-list {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 2rem;
-  width: 100%;
+  gap: var(--space-3);
 }
 
-.file-upload-area {
-  border: 2px dashed #e2e8f0;
-  border-radius: 8px;
-  padding: 1.5rem; /* Reduced from 3rem */
-  margin: 1rem auto; /* Reduced from 2rem */
-  background: #f8fafc;
+.benefit-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 100px; /* Reduced from 150px */
-  gap: 0.75rem; /* Added to control spacing between elements */
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
 }
 
-..browse-button {
-  background: #0061f2;
-  color: white;
-  padding: 0.5rem 1.5rem; /* Reduced padding */
-  border-radius: 6px;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  margin: 0.5rem 0; /* Reduced from 1rem */
+.benefit-item:hover {
+  background: var(--primary-50);
 }
 
-.convert-button {
-  margin-top: 0.75rem; /* Reduced from 2rem */
-  padding: 0.5rem 1.5rem; /* Reduced padding */
+.benefit-icon {
+  font-size: var(--text-xl);
+  flex-shrink: 0;
 }
 
-.convert-button:not(:disabled) {
-  opacity: 1;
+.benefit-item p {
+  margin: 0;
+  color: var(--gray-700);
+  font-size: var(--text-sm);
 }
 
-.convert-button:disabled {
-  cursor: not-allowed;
-  background: #ccc;
-}
-
+/* Domain Specific Section */
 .domain-specific {
   text-align: center;
-  padding: 4rem 2rem;
-  background: #f8f9fa;
-  margin-top: 3rem;
+  padding: var(--space-16) var(--space-6);
+  background: white;
 }
 
 .domain-specific h2 {
-  font-size: 2rem;
-  color: #333;
-  margin-bottom: 1rem;
+  font-size: var(--text-3xl);
+  color: var(--gray-900);
+  margin-bottom: var(--space-3);
+  font-weight: 700;
 }
 
-.domain-specific p {
-  color: #666;
-  font-size: 1.1rem;
-  margin-bottom: 2rem;
+.domain-specific > p {
+  color: var(--gray-600);
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-8);
 }
 
 .domain-specific ul {
@@ -101,141 +172,39 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-3);
 }
 
 .domain-specific li {
-  padding: 1rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  color: #444;
+  padding: var(--space-4) var(--space-5);
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  color: var(--gray-700);
+  font-size: var(--text-base);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-fast);
 }
 
-/* Services.css */
-.services-hero {
-  text-align: center;
-  padding: 4rem 2rem;
-  background: linear-gradient(90deg, #0061f2 0%, #00ba88 100%);
-  border-radius: 12px;
-  margin-bottom: 3rem;
+.domain-specific li:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-200);
 }
 
-.hero-content {
-  max-width: 800px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.hero-content h1 {
-  font-size: 2.5rem;
-  color: white;
-  margin-bottom: 1rem;
-}
-
-.hero-content p {
-  font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.benefits-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 2rem auto;
-}
-
-.benefit-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease;
-}
-
-.benefit-card:hover {
-  transform: translateY(-5px);
-}
-
-.benefit-card h3 {
-  font-size: 1.5rem;
-  color: #2d3748;
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-.benefit-card ul {
-  list-style: none;
-  padding: 0;
-}
-
-.benefit-card li {
-  padding: 0.75rem 0;
-  color: #4a5568;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.benefit-card li:last-child {
-  border-bottom: none;
-}
-
+/* Responsive */
 @media screen and (max-width: 768px) {
+  .services-hero {
+    padding: var(--space-10) var(--space-4);
+  }
+
+  .hero-content h1 {
+    font-size: var(--text-2xl);
+  }
+
   .benefits-grid {
     grid-template-columns: 1fr;
   }
-}
 
-.benefits-container {
-  max-width: 1200px;
-  margin: 3rem auto;
-  padding: 0 2rem;
-}
-
-.benefits-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
-}
-
-.benefit-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease;
-}
-
-.benefit-card h3 {
-  color: #2d3748;
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
-.benefit-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.benefit-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  background: #f8fafc;
-  border-radius: 8px;
-}
-
-.benefit-icon {
-  font-size: 1.25rem;
-}
-
-.benefit-item p {
-  margin: 0;
-  color: #4a5568;
+  .pdf-to-json {
+    padding: var(--space-10) var(--space-4);
+  }
 }

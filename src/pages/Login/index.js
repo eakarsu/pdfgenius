@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../components/AuthContext';
 import './Login.css';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -11,6 +14,9 @@ export default function Login() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Get redirect location
+  const from = location.state?.from?.pathname || '/documents';
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -20,19 +26,37 @@ export default function Login() {
     }));
   };
 
+  // Demo login - auto-fill credentials
+  const handleDemoLogin = () => {
+    setFormData({
+      email: 'demo@pdfgenius.com',
+      password: 'demo123',
+      rememberMe: true
+    });
+    setError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
     try {
-      // Add authentication logic here
-      setLoading(false);
-      navigate('/dashboard');
+      const result = await login(formData.email, formData.password);
+
+      if (result.success) {
+        navigate(from, { replace: true });
+      } else {
+        setError(result.error || 'Invalid email or password');
+      }
     } catch (err) {
-      setError('Invalid email or password');
+      setError('Login failed. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
+
+  const isLoading = loading || authLoading;
 
   return (
     <div className="login-container">
@@ -55,6 +79,7 @@ export default function Login() {
               onChange={handleChange}
               required
               placeholder="Enter your email"
+              disabled={isLoading}
             />
           </div>
 
@@ -68,6 +93,7 @@ export default function Login() {
               onChange={handleChange}
               required
               placeholder="Enter your password"
+              disabled={isLoading}
             />
           </div>
 
@@ -78,6 +104,7 @@ export default function Login() {
                 name="rememberMe"
                 checked={formData.rememberMe}
                 onChange={handleChange}
+                disabled={isLoading}
               />
               Remember me
             </label>
@@ -86,29 +113,31 @@ export default function Login() {
             </Link>
           </div>
 
-          <button 
-            type="submit" 
-            className="login-button" 
-            disabled={loading}
+          <button
+            type="submit"
+            className="login-button"
+            disabled={isLoading}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <div className="login-divider">
-          <span>Or continue with</span>
+          <span>Or</span>
         </div>
 
-        <div className="social-login">
-          <button className="social-button google">
-            <img src="/google-icon.png" alt="Google" />
-            Sign in with Google
-          </button>
-          <button className="social-button github">
-            <img src="/github-icon.png" alt="GitHub" />
-            Sign in with GitHub
-          </button>
-        </div>
+        {/* Demo Login Button */}
+        <button
+          type="button"
+          className="demo-login-button"
+          onClick={handleDemoLogin}
+          disabled={isLoading}
+        >
+          Try Demo Account
+        </button>
+        <p className="demo-hint">
+          Click to auto-fill demo credentials
+        </p>
 
         <div className="login-footer">
           Don't have an account? <Link to="/signup">Sign up</Link>

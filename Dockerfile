@@ -4,40 +4,41 @@ FROM node:22-alpine
 # Set working directory
 WORKDIR /app
 
-# Install build dependencies for native Node modules (if any during yarn install)
-# and runtime dependencies like LibreOffice and Poppler utilities.
-# Alpine uses 'apk' as its package manager.
+# Install build dependencies and runtime dependencies
 RUN apk update && \
     apk add --no-cache \
-    # Common build tools often needed for 'yarn install' if native modules are compiled
     build-base \
     python3 \
-    # Runtime dependencies for your application
     poppler-utils \
     libreoffice \
-    # Common fonts for LibreOffice to prevent issues with missing characters
-    # You might need to add more specific font packages depending on your documents
-    ttf-dejavu
-    # Note: LibreOffice on Alpine might require a Java Runtime Environment (JRE)
-    # like openjdk17-jre-headless or similar if it's not pulled in automatically
-    # by the libreoffice package and you encounter issues.
-    # Add it here if needed, e.g., 'openjdk17-jre-headless'
+    ttf-dejavu \
+    openjdk17-jre-headless \
+    fontconfig \
+    ttf-liberation
+
+# Set Java environment variables
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+ENV PATH=$JAVA_HOME/bin:$PATH
+
+# Pre-configure LibreOffice Java settings
+RUN mkdir -p /root/.config/libreoffice/4/user/config && \
+    echo '<?xml version="1.0" encoding="UTF-8"?><oor:items xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><item oor:path="/org.openoffice.Office.Java/VirtualMachine"><prop oor:name="Home" oor:op="fuse"><value>/usr/lib/jvm/java-17-openjdk</value></prop></item></oor:items>' > /root/.config/libreoffice/4/user/config/javasettings_Linux_x86_64.xml
 
 # Copy package.json and yarn.lock
 COPY package.json yarn.lock* ./
 
-# Install dependencies
-# The build-base and python3 installed above should help if any packages need native compilation
-RUN yarn install
+# Install dependencies (including uuid for unique directories)
+RUN yarn add uuid && yarn install
 
 # Copy the rest of the application
-# Ensure you have a comprehensive .dockerignore file to avoid copying unnecessary files
 COPY . .
 
-# Expose the port your React app runs on
+# Create necessary directories
+RUN mkdir -p uploads outputs temp /tmp src/services src/middleware src/utils src/routes
+
+# Expose ports
 EXPOSE 3000
 EXPOSE 3001
 
 # Start the development server
 CMD ["yarn", "dev"]
-

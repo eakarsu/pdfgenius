@@ -15,7 +15,7 @@ export default function DocumentConverter() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [customPrompt, setCustomPrompt] = useState('');
-  const [model, setModel] = useState('openai/gpt-4.1');
+  const [model, setModel] = useState('anthropic/claude-sonnet-4');
 
   const handleFileUpload = (event) => {
     const selectedFile = event.target.files[0];
@@ -39,23 +39,27 @@ export default function DocumentConverter() {
       setError("Please select a file first");
       return;
     }
-    
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError("Please login first to process documents");
+      return;
+    }
+
     setLoading(true);
     setResult(null);
     setError(null);
-    
+
     try {
       const formData = new FormData();
       formData.append('document', file);
       formData.append('customPrompt', customPrompt || '');
       formData.append('model', model);
 
-      const apiKey = process.env.REACT_APP_OPENROUTER_KEY;
-      
       const response = await fetch(`${API_URL}/api/process-document`, {
         method: 'POST',
         headers: {
-          'X-API-Key': apiKey
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
@@ -65,7 +69,7 @@ export default function DocumentConverter() {
       if (data.success) {
         setResult(data.results);
       } else {
-        throw new Error(data.error || 'Processing failed');
+        throw new Error(data.error || data.message || 'Processing failed');
       }
     } catch (error) {
       console.error('Error:', error);
@@ -113,10 +117,11 @@ export default function DocumentConverter() {
               onChange={(e) => setModel(e.target.value)}
               className="form-select"
             >
-              <option value="openai/gpt-4.1">GPT-4.1</option>
-              <option value="google/gemini-2.5-pro-preview">Gemini 2.5 Pro</option>
-              <option value="amazon/nova-pro-v1">Amazon Nova Pro</option>
-              <option value="meta-llama/llama-4-maverick:free">Llama 4 Maverick</option>
+              <option value="anthropic/claude-sonnet-4">Claude Sonnet 4 (Recommended)</option>
+              <option value="anthropic/claude-haiku-4">Claude Haiku 4 (Fast)</option>
+              <option value="openai/gpt-4o">GPT-4o</option>
+              <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+              <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash</option>
             </select>
           </div>
 

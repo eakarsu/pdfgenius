@@ -1,41 +1,47 @@
-/* PDFConverter.css */
+/* ============================================
+   PDF Converter - Professional Design
+   ============================================ */
+
 .converter-container {
-  max-width: 1200px;
+  max-width: var(--container-max);
   margin: 0 auto;
-  padding: 2rem;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: var(--space-8) var(--space-6);
   min-height: 100vh;
+  background: linear-gradient(180deg, var(--primary-600) 0%, var(--primary-800) 40%, var(--gray-100) 40%);
 }
 
 .converter-header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: var(--space-10);
+  padding-top: var(--space-16);
 }
 
 .converter-header h1 {
   color: white;
-  font-size: 2.5rem;
+  font-size: var(--text-4xl);
   font-weight: 700;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  margin-bottom: var(--space-3);
+  letter-spacing: -0.02em;
 }
 
 .converter-header p {
-  color: rgba(255,255,255,0.9);
-  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--text-lg);
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 .converter-form {
   background: white;
-  border-radius: 20px;
-  padding: 2.5rem;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--gray-200);
+  margin-bottom: var(--space-8);
 }
 
 .form-section {
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-6);
 }
 
 .form-section:last-child {
@@ -43,64 +49,68 @@
 }
 
 .section-title {
-  font-size: 1.2rem;
+  font-size: var(--text-base);
   font-weight: 600;
-  color: #333;
-  margin-bottom: 1rem;
+  color: var(--gray-700);
+  margin-bottom: var(--space-4);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
+/* File Upload Area */
 .file-upload-area {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 2rem;
-  border: 2px dashed #e1e5e9;
-  border-radius: 12px;
-  background: #f8f9fa;
-  transition: all 0.3s ease;
+  gap: var(--space-4);
+  padding: var(--space-8);
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-xl);
+  background: var(--gray-50);
+  transition: all var(--transition-base);
 }
 
 .file-upload-area:hover {
-  border-color: #667eea;
-  background: #f0f2ff;
+  border-color: var(--primary-400);
+  background: var(--primary-50);
 }
 
 .browse-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
   color: white;
-  padding: 0.75rem 2rem;
-  border-radius: 8px;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-lg);
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  font-size: var(--text-sm);
+  transition: all var(--transition-base);
   border: none;
-  font-size: 1rem;
+  box-shadow: 0 2px 4px rgb(37 99 235 / 0.3);
 }
 
 .browse-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 16px rgb(37 99 235 / 0.4);
 }
 
 .file-status {
-  color: #666;
-  font-size: 0.9rem;
-  padding: 0.5rem 1rem;
-  background: #e9ecef;
-  border-radius: 6px;
+  color: var(--gray-600);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
   min-width: 200px;
   text-align: center;
 }
 
+/* Form Row & Groups */
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
 }
 
 .form-group {
@@ -109,29 +119,30 @@
 }
 
 .form-group label {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
 }
 
 .form-input,
 .form-select,
 .form-textarea {
-  padding: 0.75rem;
-  border: 2px solid #e1e5e9;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-base);
+  transition: all var(--transition-fast);
   background: white;
+  color: var(--gray-800);
 }
 
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.15);
 }
 
 .form-textarea {
@@ -139,60 +150,69 @@
   min-height: 100px;
 }
 
+/* Convert Button */
 .convert-button {
   width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
   color: white;
-  padding: 1rem 2rem;
+  padding: var(--space-4) var(--space-6);
   border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
+  border-radius: var(--radius-xl);
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 1rem;
+  transition: all var(--transition-base);
+  margin-top: var(--space-4);
+  box-shadow: 0 4px 6px rgb(37 99 235 / 0.3);
 }
 
 .convert-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 20px rgb(37 99 235 / 0.4);
 }
 
 .convert-button:disabled {
-  background: #ccc;
+  background: var(--gray-300);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
+/* Error Message */
 .error-message {
-  background: #fee;
-  color: #c53030;
-  padding: 1rem;
-  border-radius: 8px;
-  border-left: 4px solid #c53030;
-  margin: 1rem 0;
+  background: #fef2f2;
+  color: var(--error);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--error);
+  margin: var(--space-4) 0;
+  font-size: var(--text-sm);
 }
 
+/* Results Section */
 .results-section {
-  margin-top: 2rem;
+  margin-top: var(--space-8);
 }
 
 .page-content {
   background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--gray-200);
 }
 
 .page-content h3 {
-  color: #333;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #f0f0f0;
+  color: var(--gray-900);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--gray-200);
 }
 
+/* Data Table */
 .data-table {
   overflow-x: auto;
 }
@@ -200,60 +220,76 @@
 .data-table table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 1rem;
 }
 
 .data-table th,
 .data-table td {
-  padding: 0.75rem;
+  padding: var(--space-3) var(--space-4);
   text-align: left;
-  border-bottom: 1px solid #e1e5e9;
+  border-bottom: 1px solid var(--gray-200);
+  font-size: var(--text-sm);
 }
 
 .data-table th {
-  background: #f8f9fa;
+  background: var(--gray-50);
   font-weight: 600;
-  color: #333;
+  color: var(--gray-700);
+  text-transform: uppercase;
+  font-size: var(--text-xs);
+  letter-spacing: 0.05em;
+}
+
+.data-table tr:hover {
+  background: var(--gray-50);
 }
 
 .field-name {
   font-weight: 600;
-  color: #667eea;
+  color: var(--primary-700);
   width: 30%;
+  white-space: nowrap;
 }
 
 .field-value {
+  color: var(--gray-700);
   word-break: break-word;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .converter-container {
-    padding: 1rem;
+    padding: var(--space-4);
   }
-  
+
+  .converter-header {
+    padding-top: var(--space-10);
+  }
+
+  .converter-header h1 {
+    font-size: var(--text-2xl);
+  }
+
   .converter-form {
-    padding: 1.5rem;
+    padding: var(--space-5);
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: var(--space-4);
   }
-  
-  .converter-header h1 {
-    font-size: 2rem;
+
+  .file-upload-area {
+    padding: var(--space-5);
   }
 }
 
 @media (max-width: 480px) {
-  .file-upload-area {
-    padding: 1.5rem;
+  .converter-header h1 {
+    font-size: var(--text-xl);
   }
-  
+
   .browse-button {
-    padding: 0.6rem 1.5rem;
-    font-size: 0.9rem;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
   }
 }
-

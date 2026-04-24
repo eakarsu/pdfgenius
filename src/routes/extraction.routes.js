@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
+const { authorize } = require('../middleware/rbac.middleware');
 const tableService = require('../services/table.service');
 const formService = require('../services/form.service');
 const queueService = require('../services/queue.service');
@@ -247,7 +248,7 @@ router.post('/tables/:tableId/export', authenticate, async (req, res) => {
  * DELETE /api/extract/tables/:tableId
  * Delete extracted table
  */
-router.delete('/tables/:tableId', authenticate, async (req, res) => {
+router.delete('/tables/:tableId', authenticate, authorize('tables', 'delete'), async (req, res) => {
   try {
     const table = await ExtractedTable.findByPk(req.params.tableId);
 
@@ -284,6 +285,45 @@ router.delete('/tables/:tableId', authenticate, async (req, res) => {
       error: 'Delete failed',
       message: error.message
     });
+  }
+});
+
+/**
+ * POST /api/extract/tables/bulk-delete
+ * Bulk delete extracted tables
+ */
+router.post('/tables/bulk-delete', authenticate, authorize('tables', 'delete'), async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'ids array is required'
+      });
+    }
+
+    // Verify ownership
+    const tables = await ExtractedTable.findAll({ where: { id: ids } });
+    for (const table of tables) {
+      const doc = await Document.findOne({
+        where: { id: table.document_id, user_id: req.userId }
+      });
+      if (!doc) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+
+    const deletedCount = await ExtractedTable.destroy({ where: { id: ids } });
+
+    res.json({
+      success: true,
+      message: `${deletedCount} tables deleted`,
+      deletedCount
+    });
+  } catch (error) {
+    console.error('Bulk delete tables error:', error);
+    res.status(500).json({ error: 'Bulk delete failed', message: error.message });
   }
 });
 
@@ -480,6 +520,45 @@ router.post('/forms/:documentId/export', authenticate, async (req, res) => {
 });
 
 /**
+ * POST /api/extract/forms/bulk-delete
+ * Bulk delete form fields
+ */
+router.post('/forms/bulk-delete', authenticate, authorize('forms', 'delete'), async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'ids array is required'
+      });
+    }
+
+    // Verify ownership
+    const fields = await FormField.findAll({ where: { id: ids } });
+    for (const field of fields) {
+      const doc = await Document.findOne({
+        where: { id: field.document_id, user_id: req.userId }
+      });
+      if (!doc) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+
+    const deletedCount = await FormField.destroy({ where: { id: ids } });
+
+    res.json({
+      success: true,
+      message: `${deletedCount} form fields deleted`,
+      deletedCount
+    });
+  } catch (error) {
+    console.error('Bulk delete forms error:', error);
+    res.status(500).json({ error: 'Bulk delete failed', message: error.message });
+  }
+});
+
+/**
  * POST /api/extract/forms/bulk-update
  * Bulk update form field values
  */
@@ -529,7 +608,7 @@ router.post('/forms/bulk-update', authenticate, async (req, res) => {
  * DELETE /api/extract/forms/:fieldId
  * Delete form field
  */
-router.delete('/forms/:fieldId', authenticate, async (req, res) => {
+router.delete('/forms/:fieldId', authenticate, authorize('forms', 'delete'), async (req, res) => {
   try {
     const field = await FormField.findByPk(req.params.fieldId);
 

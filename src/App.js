@@ -1,6 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './components/AuthContext';
+import { ToastProvider } from './components/Toast/ToastContext';
+import { ConfirmProvider } from './components/ConfirmDialog/ConfirmContext';
+import ToastContainer from './components/Toast';
+import ConfirmDialog from './components/ConfirmDialog';
+import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -20,70 +25,94 @@ import Comparison from './pages/Comparison';
 import TableExtraction from './pages/TableExtraction';
 import FormExtraction from './pages/FormExtraction';
 import AIAnalysis from './pages/AIAnalysis';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="app">
-          <Navbar />
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/docs" element={<Documentation />} />
-            <Route path="/legal" element={<Legal />} />
-            <Route path="/privacy-policy" element={<Legal initialTab="privacy" />} />
-            <Route path="/terms-and-conditions" element={<Legal initialTab="terms" />} />
+      <ToastProvider>
+        <ConfirmProvider>
+          <Router>
+            <ErrorBoundary>
+              <div className="app">
+                <Navbar />
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/docs" element={<Documentation />} />
+                  <Route path="/legal" element={<Legal />} />
+                  <Route path="/privacy-policy" element={<Legal initialTab="privacy" />} />
+                  <Route path="/terms-and-conditions" element={<Legal initialTab="terms" />} />
 
-            {/* Protected routes */}
-            <Route path="/documents" element={
-              <ProtectedRoute>
-                <Documents />
-              </ProtectedRoute>
-            } />
-            <Route path="/documents/:id" element={
-              <ProtectedRoute>
-                <DocumentDetail />
-              </ProtectedRoute>
-            } />
-            <Route path="/comparison" element={
-              <ProtectedRoute>
-                <Comparison />
-              </ProtectedRoute>
-            } />
-            <Route path="/table-extraction" element={
-              <ProtectedRoute>
-                <TableExtraction />
-              </ProtectedRoute>
-            } />
-            <Route path="/form-extraction" element={
-              <ProtectedRoute>
-                <FormExtraction />
-              </ProtectedRoute>
-            } />
-            <Route path="/ai-analysis" element={
-              <ProtectedRoute>
-                <AIAnalysis />
-              </ProtectedRoute>
-            } />
+                  {/* Protected routes */}
+                  <Route path="/documents" element={
+                    <ProtectedRoute>
+                      <ErrorBoundary>
+                        <Documents />
+                      </ErrorBoundary>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/documents/:id" element={
+                    <ProtectedRoute>
+                      <ErrorBoundary>
+                        <DocumentDetail />
+                      </ErrorBoundary>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/comparison" element={
+                    <ProtectedRoute>
+                      <ErrorBoundary>
+                        <Comparison />
+                      </ErrorBoundary>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/table-extraction" element={
+                    <ProtectedRoute>
+                      <ErrorBoundary>
+                        <TableExtraction />
+                      </ErrorBoundary>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/form-extraction" element={
+                    <ProtectedRoute>
+                      <ErrorBoundary>
+                        <FormExtraction />
+                      </ErrorBoundary>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/ai-analysis" element={
+                    <ProtectedRoute>
+                      <ErrorBoundary>
+                        <AIAnalysis />
+                      </ErrorBoundary>
+                    </ProtectedRoute>
+                  } />
 
-            {/* Dashboard redirect to documents */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Documents />
-              </ProtectedRoute>
-            } />
-          </Routes>
-          <Footer />
-        </div>
-      </Router>
+                  {/* Dashboard redirect to documents */}
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <Documents />
+                    </ProtectedRoute>
+                  } />
+                </Routes>
+                <Footer />
+              </div>
+            </ErrorBoundary>
+            <ToastContainer />
+            <ConfirmDialog />
+          </Router>
+        </ConfirmProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

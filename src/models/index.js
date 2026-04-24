@@ -6,6 +6,8 @@ const ProcessingJob = require('./ProcessingJob');
 const Comparison = require('./Comparison');
 const ExtractedTable = require('./ExtractedTable');
 const FormField = require('./FormField');
+const PasswordResetToken = require('./PasswordResetToken');
+const Permission = require('./Permission');
 
 // Define associations
 
@@ -39,6 +41,10 @@ ExtractedTable.belongsTo(Document, { foreignKey: 'document_id', as: 'document' }
 Document.hasMany(FormField, { foreignKey: 'document_id', as: 'formFields', onDelete: 'CASCADE' });
 FormField.belongsTo(Document, { foreignKey: 'document_id', as: 'document' });
 
+// User -> PasswordResetTokens (one-to-many)
+User.hasMany(PasswordResetToken, { foreignKey: 'user_id', as: 'resetTokens', onDelete: 'CASCADE' });
+PasswordResetToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 // Sync function with options
 const syncDatabase = async (options = {}) => {
   try {
@@ -60,5 +66,7 @@ module.exports = {
   Comparison,
   ExtractedTable,
   FormField,
+  PasswordResetToken,
+  Permission,
   syncDatabase
 };

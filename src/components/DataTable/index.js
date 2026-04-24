@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { TableSkeleton } from '../Skeleton';
 import './index.css';
 
 function DataTable({
@@ -15,15 +16,31 @@ function DataTable({
   sortable = true,
   searchable = true,
   searchPlaceholder = 'Search...',
-  actions = []
+  actions = [],
+  // Server-side props
+  serverSearch = false,
+  serverSort = false,
+  onSearch,
+  onSort,
+  // Bulk action props
+  bulkActions = [],
+  selectedIds = null,
+  onSelectedIdsChange
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [selectedRows, setSelectedRows] = useState(new Set());
 
-  // Filter data based on search
+  // Sync external selectedIds
+  useEffect(() => {
+    if (selectedIds !== null) {
+      setSelectedRows(new Set(selectedIds));
+    }
+  }, [selectedIds]);
+
+  // Filter data based on search (client-side only)
   const filteredData = useMemo(() => {
-    if (!searchTerm) return data;
+    if (serverSearch || !searchTerm) return data;
 
     return data.filter(row =>
       columns.some(col => {
@@ -32,11 +49,11 @@ function DataTable({
         return String(value).toLowerCase().includes(searchTerm.toLowerCase());
       })
     );
-  }, [data, searchTerm, columns]);
+  }, [data, searchTerm, columns, serverSearch]);
 
-  // Sort data
+  // Sort data (client-side only)
   const sortedData = useMemo(() => {
-    if (!sortConfig.key) return filteredData;
+    if (serverSort || !sortConfig.key) return filteredData;
 
     return [...filteredData].sort((a, b) => {
       const aVal = a[sortConfig.key];
@@ -52,16 +69,28 @@ function DataTable({
       const comparison = String(aVal).localeCompare(String(bVal));
       return sortConfig.direction === 'asc' ? comparison : -comparison;
     });
-  }, [filteredData, sortConfig]);
+  }, [filteredData, sortConfig, serverSort]);
 
   // Handle sort
   const handleSort = (key) => {
     if (!sortable) return;
 
-    setSortConfig(prev => ({
-      key,
-      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-    }));
+    const newDirection = sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc';
+    setSortConfig({ key, direction: newDirection });
+
+    if (serverSort && onSort) {
+      onSort(key, newDirection);
+    }
+  };
+
+  // Handle search
+  const handleSearch = (e) => {
+    const val = e.target.value;
+    setSearchTerm(val);
+
+    if (serverSearch && onSearch) {
+      onSearch(val);
+    }
   };
 
   // Handle row selection
@@ -74,6 +103,7 @@ function DataTable({
     }
     setSelectedRows(newSelected);
     onSelectionChange?.(Array.from(newSelected));
+    onSelectedIdsChange?.(Array.from(newSelected));
   };
 
   // Handle select all
@@ -81,10 +111,12 @@ function DataTable({
     if (selectedRows.size === sortedData.length) {
       setSelectedRows(new Set());
       onSelectionChange?.([]);
+      onSelectedIdsChange?.([]);
     } else {
       const allIds = new Set(sortedData.map(row => row.id));
       setSelectedRows(allIds);
       onSelectionChange?.(Array.from(allIds));
+      onSelectedIdsChange?.(Array.from(allIds));
     }
   };
 
@@ -132,18 +164,13 @@ function DataTable({
   };
 
   if (loading) {
-    return (
-      <div className="data-table-loading">
-        <div className="spinner"></div>
-        <p>Loading data...</p>
-      </div>
-    );
+    return <TableSkeleton rows={5} columns={columns.length || 4} />;
   }
 
   return (
     <div className="data-table-container">
       {/* Search and Actions Bar */}
-      {(searchable || actions.length > 0) && (
+      {(searchable || actions.length > 0 || (selectable && selectedRows.size > 0)) && (
         <div className="data-table-toolbar">
           {searchable && (
             <div className="search-box">
@@ -151,13 +178,30 @@ function DataTable({
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearch}
               />
               {searchTerm && (
-                <button className="clear-search" onClick={() => setSearchTerm('')}>
+                <button className="clear-search" onClick={() => { setSearchTerm(''); if (serverSearch && onSearch) onSearch(''); }}>
                   &times;
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Bulk actions */}
+          {selectable && selectedRows.size > 0 && (
+            <div className="bulk-actions-bar">
+              <span className="selected-count">{selectedRows.size} selected</span>
+              {bulkActions.map((action, i) => (
+                <button
+                  key={i}
+                  className={`action-btn ${action.variant || 'default'}`}
+                  onClick={() => action.onClick(Array.from(selectedRows))}
+                >
+                  {action.icon && <span className="action-icon">{action.icon}</span>}
+                  {action.label}
+                </button>
+              ))}
             </div>
           )}
 
@@ -202,8 +246,8 @@ function DataTable({
                   {sortable && col.sortable !== false && (
                     <span className="sort-icon">
                       {sortConfig.key === col.key
-                        ? sortConfig.direction === 'asc' ? '↑' : '↓'
-                        : '↕'}
+                        ? sortConfig.direction === 'asc' ? '\u2191' : '\u2193'
+                        : '\u2195'}
                     </span>
                   )}
                 </th>
@@ -245,7 +289,7 @@ function DataTable({
                         className="row-action-btn"
                         onClick={() => onAction(row)}
                       >
-                        ⋮
+                        &#8942;
                       </button>
                     </td>
                   )}

@@ -138,6 +138,24 @@
   box-shadow: var(--shadow-lg);
 }
 
+.feature-card.clickable-card {
+  cursor: pointer;
+}
+
+.feature-card.clickable-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  border-color: var(--primary-400);
+}
+
+.industry-card.clickable-card {
+  cursor: pointer;
+}
+
+.industry-card.clickable-card:hover {
+  transform: translateY(-4px) scale(1.02);
+}
+
 .feature-icon {
   width: 64px;
   height: 64px;

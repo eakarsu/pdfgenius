@@ -1,6 +1,7 @@
 // server.js
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 require('dotenv').config();
 
 // Import utilities
@@ -18,6 +19,7 @@ const documentsRoutes = require('./src/routes/documents.routes');
 const comparisonRoutes = require('./src/routes/comparison.routes');
 const extractionRoutes = require('./src/routes/extraction.routes');
 const aiRoutes = require('./src/routes/ai.routes');
+const searchRoutes = require('./src/routes/search.routes');
 
 // Import queue service and job processor
 const queueService = require('./src/services/queue.service');
@@ -29,6 +31,20 @@ setupLogger();
 const app = express();
 
 // Middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      frameSrc: ["'self'", "blob:"],
+      connectSrc: ["'self'", "https://openrouter.ai"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -43,6 +59,7 @@ app.use('/api/documents', documentsRoutes); // Document CRUD
 app.use('/api/compare', comparisonRoutes);  // Document comparison
 app.use('/api/extract', extractionRoutes);  // Table/Form extraction
 app.use('/api/ai', aiRoutes);               // AI analysis
+app.use('/api/search', searchRoutes);        // Search endpoints
 
 // Queue status endpoint
 app.get('/api/queue/status', async (req, res) => {

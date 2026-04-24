@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
+import { DetailSkeleton } from '../Skeleton';
 import './index.css';
 
 function ProtectedRoute({ children, requireAdmin = false }) {
@@ -11,10 +12,7 @@ function ProtectedRoute({ children, requireAdmin = false }) {
   if (loading) {
     return (
       <div className="protected-route-loading">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading...</p>
-        </div>
+        <DetailSkeleton />
       </div>
     );
   }

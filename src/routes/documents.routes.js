@@ -6,6 +6,7 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { Document, DocumentPage, ProcessingJob } = require('../models');
 const { authenticate } = require('../middleware/auth.middleware');
+const { authorize } = require('../middleware/rbac.middleware');
 const storageService = require('../services/storage.service');
 const queueService = require('../services/queue.service');
 const documentService = require('./document.routes'); // Import existing service
@@ -137,7 +138,7 @@ router.get('/:id', authenticate, async (req, res) => {
  * POST /api/documents
  * Upload new document
  */
-router.post('/', authenticate, upload.single('file'), async (req, res) => {
+router.post('/', authenticate, authorize('documents', 'create'), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -244,7 +245,7 @@ router.put('/:id', authenticate, async (req, res) => {
  * DELETE /api/documents/:id
  * Delete document
  */
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, authorize('documents', 'delete'), async (req, res) => {
   try {
     const document = await Document.findOne({
       where: {
@@ -285,6 +286,97 @@ router.delete('/:id', authenticate, async (req, res) => {
     console.error('Delete document error:', error);
     res.status(500).json({
       error: 'Delete failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/documents/bulk-delete
+ * Bulk delete documents
+ */
+router.post('/bulk-delete', authenticate, authorize('documents', 'delete'), async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'ids array is required'
+      });
+    }
+
+    const documents = await Document.findAll({
+      where: {
+        id: ids,
+        user_id: req.userId
+      }
+    });
+
+    // Delete files and documents
+    for (const doc of documents) {
+      if (doc.storage_path) {
+        try { await storageService.deleteFile(doc.storage_path); } catch (e) { /* ignore */ }
+      }
+      if (doc.metadata?.uploadPath && fs.existsSync(doc.metadata.uploadPath)) {
+        fs.unlinkSync(doc.metadata.uploadPath);
+      }
+      await doc.destroy();
+    }
+
+    res.json({
+      success: true,
+      message: `${documents.length} documents deleted`,
+      deletedCount: documents.length
+    });
+  } catch (error) {
+    console.error('Bulk delete error:', error);
+    res.status(500).json({
+      error: 'Bulk delete failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/documents/bulk-update
+ * Bulk update document status
+ */
+router.post('/bulk-update', authenticate, authorize('documents', 'update'), async (req, res) => {
+  try {
+    const { ids, updates } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'ids array is required'
+      });
+    }
+
+    const allowedUpdates = ['status', 'metadata'];
+    const filteredUpdates = {};
+    for (const key of allowedUpdates) {
+      if (updates?.[key] !== undefined) {
+        filteredUpdates[key] = updates[key];
+      }
+    }
+
+    const [updatedCount] = await Document.update(filteredUpdates, {
+      where: {
+        id: ids,
+        user_id: req.userId
+      }
+    });
+
+    res.json({
+      success: true,
+      message: `${updatedCount} documents updated`,
+      updatedCount
+    });
+  } catch (error) {
+    console.error('Bulk update error:', error);
+    res.status(500).json({
+      error: 'Bulk update failed',
       message: error.message
     });
   }

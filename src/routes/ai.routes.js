@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
+const { authorize } = require('../middleware/rbac.middleware');
 const { Document, DocumentPage, ProcessingJob } = require('../models');
 const queueService = require('../services/queue.service');
 
@@ -19,7 +20,7 @@ const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-0
  * POST /api/ai/summarize/:documentId
  * Summarize document using AI
  */
-router.post('/summarize/:documentId', authenticate, async (req, res) => {
+router.post('/summarize/:documentId', authenticate, authorize('ai', 'create'), async (req, res) => {
   try {
     const document = await Document.findOne({
       where: {
@@ -114,7 +115,7 @@ ${fullText.substring(0, 50000)}`; // Limit to ~50k chars
  * POST /api/ai/extract/:documentId
  * Extract structured data from document using AI
  */
-router.post('/extract/:documentId', authenticate, async (req, res) => {
+router.post('/extract/:documentId', authenticate, authorize('ai', 'create'), async (req, res) => {
   try {
     const document = await Document.findOne({
       where: {
@@ -205,7 +206,7 @@ router.post('/extract/:documentId', authenticate, async (req, res) => {
  * POST /api/ai/analyze/:documentId
  * Custom AI analysis with prompt
  */
-router.post('/analyze/:documentId', authenticate, async (req, res) => {
+router.post('/analyze/:documentId', authenticate, authorize('ai', 'create'), async (req, res) => {
   try {
     const document = await Document.findOne({
       where: {

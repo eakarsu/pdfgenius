@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const crypto = require('crypto');
+const { User, PasswordResetToken } = require('../models');
+const { Op } = require('sequelize');
 require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pdfgenius-secret-key';
@@ -121,6 +123,69 @@ class AuthService {
 
     await user.update(filteredUpdates);
     return user.toSafeJSON();
+  }
+
+  /**
+   * Request password reset
+   */
+  async requestPasswordReset(email) {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      // Don't reveal whether email exists
+      return { message: 'If an account exists with that email, a reset link has been sent.' };
+    }
+
+    // Invalidate any existing tokens
+    await PasswordResetToken.update(
+      { used: true },
+      { where: { user_id: user.id, used: false } }
+    );
+
+    // Generate token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires_at = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await PasswordResetToken.create({
+      user_id: user.id,
+      token,
+      expires_at
+    });
+
+    return {
+      message: 'If an account exists with that email, a reset link has been sent.',
+      token, // In production, this would be sent via email
+      resetLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`
+    };
+  }
+
+  /**
+   * Reset password using token
+   */
+  async resetPassword(token, newPassword) {
+    const resetToken = await PasswordResetToken.findOne({
+      where: {
+        token,
+        used: false,
+        expires_at: { [Op.gt]: new Date() }
+      }
+    });
+
+    if (!resetToken) {
+      throw new Error('Invalid or expired reset token');
+    }
+
+    const user = await User.findByPk(resetToken.user_id);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Update password
+    await user.update({ password_hash: newPassword });
+
+    // Mark token as used
+    await resetToken.update({ used: true });
+
+    return { message: 'Password reset successful' };
   }
 
   /**

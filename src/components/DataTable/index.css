@@ -296,6 +296,33 @@
   color: #64748b;
 }
 
+/* Bulk actions */
+.bulk-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #eff6ff;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.selected-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1d4ed8;
+  margin-right: 4px;
+}
+
+.action-btn.danger {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+
+.action-btn.danger:hover {
+  background: #dc2626;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .data-table-toolbar {

@@ -6,10 +6,13 @@ const {
   ProcessingJob,
   Comparison,
   ExtractedTable,
-  FormField
+  FormField,
+  PasswordResetToken,
+  Permission
 } = require('../models');
 
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 async function seed() {
   console.log('Starting database seed...');
@@ -45,13 +48,14 @@ async function seed() {
       { email: 'ryan.anderson@example.com', password_hash: await bcrypt.hash('password123', 12), name: 'Ryan Anderson', role: 'user' },
       { email: 'katie.thomas@example.com', password_hash: await bcrypt.hash('password123', 12), name: 'Katie Thomas', role: 'user' },
       { email: 'steve.jackson@example.com', password_hash: await bcrypt.hash('password123', 12), name: 'Steve Jackson', role: 'user' }
-    ], { individualHooks: false }); // Skip hooks since passwords are pre-hashed
+    ], { individualHooks: false });
 
     console.log(`  Created ${users.length} users`);
 
     const demoUser = users[0];
+    const adminUser = users[1];
 
-    // ==================== DOCUMENTS (20) ====================
+    // ==================== DOCUMENTS (25) ====================
     console.log('Seeding documents...');
 
     const documentData = [
@@ -74,13 +78,20 @@ async function seed() {
       { original_name: 'Training_Manual.pdf', file_size: 3456789, mime_type: 'application/pdf', status: 'completed', total_pages: 78 },
       { original_name: 'Expense_Report_Nov.pdf', file_size: 189012, mime_type: 'application/pdf', status: 'completed', total_pages: 3 },
       { original_name: 'Client_Presentation.pptx', file_size: 4567890, mime_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', status: 'completed', total_pages: 32 },
-      { original_name: 'NDA_Template.pdf', file_size: 156789, mime_type: 'application/pdf', status: 'completed', total_pages: 4 }
+      { original_name: 'NDA_Template.pdf', file_size: 156789, mime_type: 'application/pdf', status: 'completed', total_pages: 4 },
+      // 5 additional documents
+      { original_name: 'Supply_Chain_Report.pdf', file_size: 678901, mime_type: 'application/pdf', status: 'completed', total_pages: 18 },
+      { original_name: 'Customer_Survey_Results.pdf', file_size: 234567, mime_type: 'application/pdf', status: 'completed', total_pages: 7 },
+      { original_name: 'Board_Meeting_Q1.pdf', file_size: 345678, mime_type: 'application/pdf', status: 'pending', total_pages: 0 },
+      { original_name: 'IT_Security_Policy.pdf', file_size: 456789, mime_type: 'application/pdf', status: 'completed', total_pages: 22 },
+      { original_name: 'Vendor_Contract_2025.pdf', file_size: 567890, mime_type: 'application/pdf', status: 'processing', total_pages: 14 }
     ];
 
+    // Create documents for demo user and some for admin
     const documents = await Document.bulkCreate(
-      documentData.map(doc => ({
+      documentData.map((doc, i) => ({
         ...doc,
-        user_id: demoUser.id,
+        user_id: i < 20 ? demoUser.id : adminUser.id,
         metadata: { source: 'seed' }
       }))
     );
@@ -92,7 +103,7 @@ async function seed() {
 
     const pagePromises = [];
     for (const doc of documents.filter(d => d.status === 'completed' && d.total_pages > 0)) {
-      for (let i = 1; i <= Math.min(doc.total_pages, 5); i++) { // Max 5 pages per doc for seed
+      for (let i = 1; i <= Math.min(doc.total_pages, 5); i++) {
         pagePromises.push(DocumentPage.create({
           document_id: doc.id,
           page_number: i,
@@ -112,14 +123,14 @@ async function seed() {
     const pages = await Promise.all(pagePromises);
     console.log(`  Created ${pages.length} document pages`);
 
-    // ==================== PROCESSING JOBS (20) ====================
+    // ==================== PROCESSING JOBS (25) ====================
     console.log('Seeding processing jobs...');
 
     const jobTypes = ['convert', 'analyze', 'extract_tables', 'extract_forms', 'summarize'];
     const jobStatuses = ['completed', 'completed', 'completed', 'failed', 'queued'];
 
     const jobs = await ProcessingJob.bulkCreate(
-      documents.slice(0, 20).map((doc, i) => ({
+      documents.slice(0, 25).map((doc, i) => ({
         document_id: doc.id,
         job_type: jobTypes[i % jobTypes.length],
         status: jobStatuses[i % jobStatuses.length],
@@ -133,21 +144,22 @@ async function seed() {
 
     console.log(`  Created ${jobs.length} processing jobs`);
 
-    // ==================== COMPARISONS (15) ====================
+    // ==================== COMPARISONS (20) ====================
     console.log('Seeding comparisons...');
 
     const completedDocs = documents.filter(d => d.status === 'completed');
     const comparisonData = [];
 
-    for (let i = 0; i < 15 && i < completedDocs.length - 1; i++) {
+    for (let i = 0; i < 20 && i < completedDocs.length - 1; i++) {
+      const statuses = ['completed', 'completed', 'completed', 'pending', 'failed'];
       comparisonData.push({
         user_id: demoUser.id,
         document_a_id: completedDocs[i].id,
-        document_b_id: completedDocs[i + 1].id,
+        document_b_id: completedDocs[(i + 1) % completedDocs.length].id,
         comparison_type: ['text', 'structural', 'semantic', 'full'][i % 4],
         similarity_score: (30 + Math.random() * 60).toFixed(2),
         differences_count: Math.floor(Math.random() * 50),
-        status: 'completed',
+        status: statuses[i % statuses.length],
         result: {
           type: ['text', 'structural', 'semantic', 'full'][i % 4],
           summary: 'Documents have been compared successfully.'
@@ -158,7 +170,7 @@ async function seed() {
     const comparisons = await Comparison.bulkCreate(comparisonData);
     console.log(`  Created ${comparisons.length} comparisons`);
 
-    // ==================== EXTRACTED TABLES (15) ====================
+    // ==================== EXTRACTED TABLES (20) ====================
     console.log('Seeding extracted tables...');
 
     const tableData = [
@@ -176,7 +188,13 @@ async function seed() {
       { headers: ['Asset', 'Type', 'Value', 'Location'], rows: [['Server #1', 'Hardware', '$5,000', 'Data Center'], ['Desk #42', 'Furniture', '$300', 'Office A']] },
       { headers: ['Metric', 'Q1', 'Q2', 'Q3', 'Q4'], rows: [['Users', '1000', '1200', '1500', '1800'], ['Revenue', '$10K', '$12K', '$15K', '$18K']] },
       { headers: ['Country', 'Sales', 'Growth', 'Market Share'], rows: [['USA', '$1M', '15%', '35%'], ['UK', '$500K', '10%', '20%']] },
-      { headers: ['Feature', 'Version', 'Status', 'Notes'], rows: [['Login', 'v2.0', 'Released', 'SSO support'], ['Dashboard', 'v2.1', 'Beta', 'New charts']] }
+      { headers: ['Feature', 'Version', 'Status', 'Notes'], rows: [['Login', 'v2.0', 'Released', 'SSO support'], ['Dashboard', 'v2.1', 'Beta', 'New charts']] },
+      // 5 additional tables
+      { headers: ['Quarter', 'Target', 'Achieved', 'Variance'], rows: [['Q1', '$100K', '$95K', '-$5K'], ['Q2', '$110K', '$120K', '+$10K']] },
+      { headers: ['Department', 'Headcount', 'Budget', 'Utilization'], rows: [['Engineering', '45', '$500K', '92%'], ['Sales', '30', '$350K', '85%']] },
+      { headers: ['Risk', 'Probability', 'Impact', 'Mitigation'], rows: [['Data Breach', 'Low', 'High', 'Encryption'], ['Downtime', 'Medium', 'Medium', 'Redundancy']] },
+      { headers: ['Task', 'Priority', 'Status', 'Due Date'], rows: [['API Integration', 'High', 'In Progress', '2025-02-15'], ['UI Redesign', 'Medium', 'Planned', '2025-03-01']] },
+      { headers: ['Metric', 'Current', 'Target', 'Status'], rows: [['Uptime', '99.9%', '99.95%', 'On Track'], ['Response Time', '120ms', '100ms', 'At Risk']] }
     ];
 
     const tables = await ExtractedTable.bulkCreate(
@@ -263,6 +281,62 @@ async function seed() {
 
     console.log(`  Created ${formFields.length} form fields`);
 
+    // ==================== PASSWORD RESET TOKENS (15) ====================
+    console.log('Seeding password reset tokens...');
+
+    const resetTokens = await PasswordResetToken.bulkCreate([
+      // Valid tokens
+      ...Array.from({ length: 5 }, (_, i) => ({
+        user_id: users[i % users.length].id,
+        token: crypto.randomBytes(32).toString('hex'),
+        expires_at: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
+        used: false
+      })),
+      // Expired tokens
+      ...Array.from({ length: 5 }, (_, i) => ({
+        user_id: users[(i + 5) % users.length].id,
+        token: crypto.randomBytes(32).toString('hex'),
+        expires_at: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
+        used: false
+      })),
+      // Used tokens
+      ...Array.from({ length: 5 }, (_, i) => ({
+        user_id: users[(i + 10) % users.length].id,
+        token: crypto.randomBytes(32).toString('hex'),
+        expires_at: new Date(Date.now() + 60 * 60 * 1000),
+        used: true
+      }))
+    ]);
+
+    console.log(`  Created ${resetTokens.length} password reset tokens`);
+
+    // ==================== PERMISSIONS (84) ====================
+    console.log('Seeding permissions...');
+
+    const roles = ['user', 'admin'];
+    const resources = ['documents', 'comparisons', 'tables', 'forms', 'ai', 'users'];
+    const actions = ['read', 'create', 'update', 'delete', 'export', 'bulk_delete', 'bulk_update'];
+
+    const permissionData = [];
+    for (const role of roles) {
+      for (const resource of resources) {
+        for (const action of actions) {
+          let allowed = true;
+
+          // Restrict certain actions for user role
+          if (role === 'user') {
+            if (resource === 'users') allowed = false;
+            if (['bulk_delete', 'bulk_update'].includes(action) && resource !== 'documents') allowed = false;
+          }
+
+          permissionData.push({ role, resource, action, allowed });
+        }
+      }
+    }
+
+    const permissions = await Permission.bulkCreate(permissionData);
+    console.log(`  Created ${permissions.length} permissions`);
+
     console.log('\n✅ Database seeding completed successfully!');
     console.log('\n📋 Summary:');
     console.log(`   - Users: ${users.length}`);
@@ -272,9 +346,14 @@ async function seed() {
     console.log(`   - Comparisons: ${comparisons.length}`);
     console.log(`   - Extracted Tables: ${tables.length}`);
     console.log(`   - Form Fields: ${formFields.length}`);
+    console.log(`   - Password Reset Tokens: ${resetTokens.length}`);
+    console.log(`   - Permissions: ${permissions.length}`);
     console.log('\n🔑 Demo Login:');
     console.log('   Email: demo@pdfgenius.com');
     console.log('   Password: demo123');
+    console.log('\n🔑 Admin Login:');
+    console.log('   Email: admin@pdfgenius.com');
+    console.log('   Password: admin123');
 
   } catch (error) {
     console.error('Seeding failed:', error);

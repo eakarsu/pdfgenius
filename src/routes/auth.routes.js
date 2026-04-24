@@ -170,6 +170,78 @@ router.put('/password', authenticate, async (req, res) => {
 });
 
 /**
+ * POST /api/auth/forgot-password
+ * Request password reset
+ */
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Email is required'
+      });
+    }
+
+    const result = await authService.requestPasswordReset(email);
+
+    res.json({
+      success: true,
+      message: result.message,
+      // In dev mode, return the reset link for testing
+      ...(process.env.NODE_ENV !== 'production' && {
+        resetLink: result.resetLink,
+        token: result.token
+      })
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error.message);
+    res.status(500).json({
+      error: 'Request failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/auth/reset-password
+ * Reset password with token
+ */
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Token and new password are required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Password must be at least 6 characters'
+      });
+    }
+
+    const result = await authService.resetPassword(token, newPassword);
+
+    res.json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    console.error('Reset password error:', error.message);
+    res.status(400).json({
+      error: 'Reset failed',
+      message: error.message
+    });
+  }
+});
+
+/**
  * POST /api/auth/verify
  * Verify JWT token is valid
  */

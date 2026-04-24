@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
+const { authorize } = require('../middleware/rbac.middleware');
 const comparisonService = require('../services/comparison.service');
 const { Document, Comparison } = require('../models');
 
@@ -8,7 +9,7 @@ const { Document, Comparison } = require('../models');
  * POST /api/compare
  * Compare two documents
  */
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, authorize('comparisons', 'create'), async (req, res) => {
   try {
     const { documentAId, documentBId, comparisonType = 'text' } = req.body;
 
@@ -131,10 +132,46 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 /**
+ * POST /api/compare/bulk-delete
+ * Bulk delete comparisons
+ */
+router.post('/bulk-delete', authenticate, authorize('comparisons', 'delete'), async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'ids array is required'
+      });
+    }
+
+    const deletedCount = await Comparison.destroy({
+      where: {
+        id: ids,
+        user_id: req.userId
+      }
+    });
+
+    res.json({
+      success: true,
+      message: `${deletedCount} comparisons deleted`,
+      deletedCount
+    });
+  } catch (error) {
+    console.error('Bulk delete error:', error);
+    res.status(500).json({
+      error: 'Bulk delete failed',
+      message: error.message
+    });
+  }
+});
+
+/**
  * DELETE /api/compare/:id
  * Delete comparison
  */
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticate, authorize('comparisons', 'delete'), async (req, res) => {
   try {
     const comparison = await Comparison.findOne({
       where: {

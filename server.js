@@ -20,6 +20,12 @@ const comparisonRoutes = require('./src/routes/comparison.routes');
 const extractionRoutes = require('./src/routes/extraction.routes');
 const aiRoutes = require('./src/routes/ai.routes');
 const searchRoutes = require('./src/routes/search.routes');
+const mapReduceRoutes = require('./src/routes/mapReduce.routes');
+const ragRoutes = require('./src/routes/rag.routes');
+const templateRoutes = require('./src/routes/templates.routes');
+const redlineRoutes = require('./src/routes/redline.routes');
+const autofillRoutes = require('./src/routes/autofill.routes');
+const aiUsageRoutes = require('./src/routes/aiUsage.routes');
 
 // Import queue service and job processor
 const queueService = require('./src/services/queue.service');
@@ -45,7 +51,23 @@ app.use(helmet({
   },
   crossOriginEmbedderPolicy: false,
 }));
-app.use(cors());
+// CORS — restrict to env-configured origin list in production.
+// Set CORS_ORIGINS as comma-separated list, e.g. "https://app.example.com,https://admin.example.com"
+const allowedOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true); // server-to-server / curl / health checks
+      if (allowedOrigins.length === 0) return cb(null, true); // dev wildcard
+      if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) return cb(null, true);
+      return cb(new Error(`CORS: origin ${origin} not allowed`));
+    },
+    credentials: true,
+  }),
+);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -60,6 +82,27 @@ app.use('/api/compare', comparisonRoutes);  // Document comparison
 app.use('/api/extract', extractionRoutes);  // Table/Form extraction
 app.use('/api/ai', aiRoutes);               // AI analysis
 app.use('/api/search', searchRoutes);        // Search endpoints
+app.use('/api/map-reduce', mapReduceRoutes);  // Map-reduce summarization with citations
+app.use('/api/rag', ragRoutes);              // Multi-document RAG chat
+app.use('/api/templates', templateRoutes);    // Document-class templates
+app.use('/api/redline', redlineRoutes);      // Per-clause accept/reject UI backend
+app.use('/api/autofill', autofillRoutes);    // Form auto-fill from prior extractions
+app.use('/api/ai-usage', aiUsageRoutes);     // AI usage analytics
+app.use('/api/ai-extras', require('./src/routes/aiExtras.routes')); // Custom Feature Suggestions (batch 11)
+
+// Health endpoint (also pings DB + queue)
+app.get('/api/health', async (req, res) => {
+  const out = { status: 'ok', timestamp: new Date().toISOString(), checks: {} };
+  try {
+    await sequelize.authenticate();
+    out.checks.db = 'ok';
+  } catch (e) { out.checks.db = `error: ${e.message}`; out.status = 'degraded'; }
+  try {
+    const stats = await queueService.getQueueStats();
+    out.checks.queue = stats ? 'ok' : 'unavailable';
+  } catch (e) { out.checks.queue = `error: ${e.message}`; out.status = 'degraded'; }
+  res.status(out.status === 'ok' ? 200 : 503).json(out);
+});
 
 // Queue status endpoint
 app.get('/api/queue/status', async (req, res) => {
@@ -71,11 +114,20 @@ app.get('/api/queue/status', async (req, res) => {
   }
 });
 
-// Queue jobs endpoint
+// Queue jobs endpoint (paginated)
 app.get('/api/queue/jobs', async (req, res) => {
   try {
-    const jobs = await queueService.getRecentJobs(50);
-    res.json({ success: true, jobs });
+    const page = parseInt(req.query.page || '1', 10);
+    const pageSize = Math.min(parseInt(req.query.pageSize || '50', 10), 200);
+    const { data, total } = await queueService.getRecentJobs(pageSize, (page - 1) * pageSize);
+    res.json({
+      success: true,
+      data,
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -127,23 +179,48 @@ async function startServer() {
     const dbConnected = await testConnection();
 
     if (dbConnected) {
-      // Sync database models
-      await sequelize.sync({ alter: true });
-      console.log('Database models synchronized');
+      // Sync database models — safe strategy per environment
+      if (process.env.NODE_ENV === 'production') {
+        // In production: only verify connectivity; never auto-alter schema.
+        // Run migrations manually (e.g. sequelize-cli db:migrate) before deploying.
+        await sequelize.authenticate();
+        console.log('Database connection authenticated (production — schema sync skipped)');
+        console.warn('WARNING: schema changes must be applied via migrations in production.');
+      } else {
+        // In development: auto-sync is convenient but can be lossy on column renames.
+        console.warn('WARNING: sequelize.sync({ alter: true }) is running in development mode. ' +
+          'This is destructive if column types or names change. Use migrations for any rename/delete.');
+        await sequelize.sync({ alter: true });
+        console.log('Database models synchronized (development)');
+      }
 
-      // Initialize job processors
+      // Initialize job processors. In production, missing Redis is fatal
+      // (otherwise the API silently returns "queued" without ever processing).
       try {
         initializeProcessors();
         console.log('Job processors initialized');
+        if (queueService.healthCheck) {
+          const ok = await queueService.healthCheck();
+          if (!ok && process.env.NODE_ENV === 'production') {
+            console.error('FATAL: queue subsystem unhealthy in production');
+            process.exit(1);
+          }
+        }
       } catch (err) {
-        console.log('Job processors not available (Redis may not be running):', err.message);
+        if (process.env.NODE_ENV === 'production') {
+          console.error('FATAL: job processors failed to start in production:', err.message);
+          process.exit(1);
+        }
+        console.warn('Job processors not available (dev mode tolerates missing Redis):', err.message);
       }
     } else {
       console.log('Running without database connection');
     }
 
     // Start server
-    app.listen(PORT, () => {
+    app.use('/api', require('./src/routes/gap-features')); // === Batch 11 Gaps & Frontend Mounts ===
+
+app.listen(PORT, () => {
       console.log(`\n========================================`);
       console.log(`   PDFGenius Server Running on port ${PORT}`);
       console.log(`========================================\n`);

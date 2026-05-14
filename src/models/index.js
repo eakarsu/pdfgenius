@@ -8,6 +8,12 @@ const ExtractedTable = require('./ExtractedTable');
 const FormField = require('./FormField');
 const PasswordResetToken = require('./PasswordResetToken');
 const Permission = require('./Permission');
+const AIUsageLog = require('./AIUsageLog');
+const DocumentChunk = require('./DocumentChunk');
+const { RagChat, RagMessage } = require('./RagChat');
+const DocumentTemplate = require('./DocumentTemplate');
+const RedlineDecision = require('./RedlineDecision');
+const FormAutofill = require('./FormAutofill');
 
 // Define associations
 
@@ -41,6 +47,18 @@ ExtractedTable.belongsTo(Document, { foreignKey: 'document_id', as: 'document' }
 Document.hasMany(FormField, { foreignKey: 'document_id', as: 'formFields', onDelete: 'CASCADE' });
 FormField.belongsTo(Document, { foreignKey: 'document_id', as: 'document' });
 
+// Document -> DocumentChunks (one-to-many)
+Document.hasMany(DocumentChunk, { foreignKey: 'document_id', as: 'chunks', onDelete: 'CASCADE' });
+DocumentChunk.belongsTo(Document, { foreignKey: 'document_id', as: 'document' });
+
+// Comparison -> RedlineDecisions
+Comparison.hasMany(RedlineDecision, {
+  foreignKey: 'comparison_id',
+  as: 'decisions',
+  onDelete: 'CASCADE',
+});
+RedlineDecision.belongsTo(Comparison, { foreignKey: 'comparison_id', as: 'comparison' });
+
 // User -> PasswordResetTokens (one-to-many)
 User.hasMany(PasswordResetToken, { foreignKey: 'user_id', as: 'resetTokens', onDelete: 'CASCADE' });
 PasswordResetToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -68,5 +86,12 @@ module.exports = {
   FormField,
   PasswordResetToken,
   Permission,
-  syncDatabase
+  AIUsageLog,
+  DocumentChunk,
+  RagChat,
+  RagMessage,
+  DocumentTemplate,
+  RedlineDecision,
+  FormAutofill,
+  syncDatabase,
 };

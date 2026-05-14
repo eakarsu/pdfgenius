@@ -37,14 +37,16 @@
     "web-vitals": "^4.2.4"
   },
   "scripts": {
-    "start": "react-scripts --openssl-legacy-provider start",
-    "build": "react-scripts build",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
+    "eject": "echo 'Ejection is not applicable with Vite. Edit vite.config.js directly.'",
     "server": "nodemon --watch src --watch server.js server.js",
-    "dev": "concurrently \"yarn server\" \"yarn start\"",
+    "dev": "concurrently \"npm run server\" \"npm run start\"",
     "seed": "node src/seeds/seed.js",
-    "db:sync": "node -e \"require('./src/models').syncDatabase({ alter: true }).then(() => process.exit(0))\""
+    "db:sync": "node -e \"require('./src/models').syncDatabase({ alter: true }).then(() => process.exit(0))\"",
+    "_cra_note": "CRA (react-scripts) has been replaced with Vite. react-scripts is kept in devDependencies only for 'npm test' until the test runner is also migrated (e.g. to Vitest). Remove react-scripts and cra-template once tests are moved."
   },
   "proxy": "http://localhost:3001",
   "eslintConfig": {
@@ -67,7 +69,9 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "vite": "^5.4.11"
   }
 }

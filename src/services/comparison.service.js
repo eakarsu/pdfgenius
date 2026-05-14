@@ -1,6 +1,75 @@
 const { diffLines, diffWords } = require('diff');
 const { Document, DocumentPage, Comparison } = require('../models');
 
+// Default model for semantic comparison — can be overridden via env
+const SEMANTIC_MODEL = process.env.OPENROUTER_COMPARISON_MODEL ||
+  process.env.OPENROUTER_MODEL ||
+  'google/gemini-2.0-flash-001';
+
+/**
+ * Call OpenRouter for AI-powered semantic document comparison.
+ * Returns a parsed object with added/removed/modified/structural sections.
+ */
+async function callSemanticComparisonAI(textA, textB) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set');
+
+  const prompt = `You are an expert document analyst. Compare the following two documents and identify:
+1. Added sections — content present in Document B but not in Document A
+2. Removed sections — content present in Document A but not in Document B
+3. Modified content — content that exists in both documents but has been changed (quote both versions)
+4. Structural changes — differences in headings, numbering, layout, or document organisation
+
+Return your analysis as valid JSON matching this schema:
+{
+  "summary": "<one-paragraph plain-English overview>",
+  "addedSections": [{ "heading": "<section heading or description>", "excerpt": "<short quote from doc B>" }],
+  "removedSections": [{ "heading": "<section heading or description>", "excerpt": "<short quote from doc A>" }],
+  "modifiedContent": [{ "heading": "<section>", "original": "<text from A>", "revised": "<text from B>" }],
+  "structuralChanges": ["<change description>"],
+  "overallChangeLevel": "minor|moderate|significant|major"
+}
+
+--- DOCUMENT A ---
+${textA.substring(0, 20000)}
+
+--- DOCUMENT B ---
+${textB.substring(0, 20000)}
+
+Return only the JSON object, no markdown fences.`;
+
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://pdfgenius.com',
+      'X-Title': 'PDFGenius'
+    },
+    body: JSON.stringify({
+      model: SEMANTIC_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 4000
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`OpenRouter semantic comparison error: ${errText}`);
+  }
+
+  const data = await response.json();
+  const raw = data.choices?.[0]?.message?.content || '{}';
+
+  // Try to parse as JSON; fall back to wrapping raw text
+  try {
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: raw };
+  } catch {
+    return { summary: raw };
+  }
+}
+
 class ComparisonService {
   /**
    * Compare two documents
@@ -155,27 +224,51 @@ class ComparisonService {
   }
 
   /**
-   * Semantic comparison (would use AI in production)
+   * Semantic comparison using OpenRouter AI.
+   * Extracts text from both documents, sends to the LLM, and returns
+   * both the text-level visual diff and the AI semantic diff so callers
+   * receive a complete picture.
    */
   async semanticComparison(docA, docB) {
-    // In production, this would use AI embeddings
-    // For now, use enhanced text comparison
-    const textResult = await this.textComparison(docA, docB);
+    const textA = this.extractText(docA);
+    const textB = this.extractText(docB);
+
+    // Run text (visual) diff and AI semantic analysis in parallel
+    const [textResult, aiSemanticResult] = await Promise.all([
+      this.textComparison(docA, docB),
+      callSemanticComparisonAI(textA, textB).catch(err => {
+        console.error('AI semantic comparison failed, falling back to summary:', err.message);
+        return { summary: this.generateComparisonSummary({ similarityScore: 0 }), error: err.message };
+      })
+    ]);
 
     return {
       type: 'semantic',
       similarityScore: textResult.similarityScore,
       differencesCount: textResult.differencesCount,
-      summary: this.generateComparisonSummary(textResult),
-      themes: {
-        documentA: this.extractThemes(docA),
-        documentB: this.extractThemes(docB)
-      }
+      // Visual/text diff (line-level)
+      visualDiff: {
+        lineDiff: textResult.lineDiff,
+        wordDiff: textResult.wordDiff
+      },
+      // AI-powered semantic analysis
+      semanticDiff: {
+        summary: aiSemanticResult.summary || this.generateComparisonSummary(textResult),
+        addedSections: aiSemanticResult.addedSections || [],
+        removedSections: aiSemanticResult.removedSections || [],
+        modifiedContent: aiSemanticResult.modifiedContent || [],
+        structuralChanges: aiSemanticResult.structuralChanges || [],
+        overallChangeLevel: aiSemanticResult.overallChangeLevel || 'unknown',
+        aiError: aiSemanticResult.error || null
+      },
+      documentA: { name: docA.original_name, pages: docA.total_pages, charCount: textA.length },
+      documentB: { name: docB.original_name, pages: docB.total_pages, charCount: textB.length }
     };
   }
 
   /**
-   * Full comparison combining all methods
+   * Full comparison combining all methods (text, structural, semantic with AI).
+   * Returns both visual diff (line/word) and AI semantic diff.
    */
   async fullComparison(docA, docB) {
     const [text, structural, semantic] = await Promise.all([
@@ -192,6 +285,7 @@ class ComparisonService {
       differencesCount: text.differencesCount,
       text,
       structural,
+      // semantic includes both visualDiff and semanticDiff
       semantic
     };
   }

@@ -91,6 +91,11 @@ export default function Navbar() {
                       AI Analysis
                     </Link>
                   </li>
+                  <li>
+                    <Link to="/ai-classify" onClick={() => setIsMobileMenuOpen(false)}>
+                      Classify &amp; Compliance
+                    </Link>
+                  </li>
                 </ul>
               </li>
             </>

@@ -1,3 +1,14 @@
+// === Batch 11 Gaps & Frontend Mounts ===
+import GapOcrPipelinePage from './pages/gap/GapOcrPipelinePage'
+import GapPdfClassifierPage from './pages/gap/GapPdfClassifierPage'
+import GapTranslationRagPage from './pages/gap/GapTranslationRagPage'
+import GapStructuredExportPage from './pages/gap/GapStructuredExportPage'
+import GapCollaborationCommentingPage from './pages/gap/GapCollaborationCommentingPage'
+import GapVersioningPage from './pages/gap/GapVersioningPage'
+import GapWatermarkingDrmPage from './pages/gap/GapWatermarkingDrmPage'
+import GapBatchProcessingPage from './pages/gap/GapBatchProcessingPage'
+import GapEsignIntegrationPage from './pages/gap/GapEsignIntegrationPage'
+import GapSsoEnterprisePage from './pages/gap/GapSsoEnterprisePage'
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './components/AuthContext';
@@ -25,8 +36,13 @@ import Comparison from './pages/Comparison';
 import TableExtraction from './pages/TableExtraction';
 import FormExtraction from './pages/FormExtraction';
 import AIAnalysis from './pages/AIAnalysis';
+import AIClassify from './pages/AIClassify';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import RagChat from './pages/RagChat';
+import Templates from './pages/Templates';
+import Redline from './pages/Redline';
+import AIUsage from './pages/AIUsage';
 
 function App() {
   return (
@@ -97,6 +113,42 @@ function App() {
                       </ErrorBoundary>
                     </ProtectedRoute>
                   } />
+                  <Route path="/ai-classify" element={
+                    <ProtectedRoute>
+                      <ErrorBoundary>
+                        <AIClassify />
+                      </ErrorBoundary>
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/rag-chat" element={
+                    <ProtectedRoute>
+                      <ErrorBoundary>
+                        <RagChat />
+                      </ErrorBoundary>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/templates" element={
+                    <ProtectedRoute>
+                      <ErrorBoundary>
+                        <Templates />
+                      </ErrorBoundary>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/redline/:id" element={
+                    <ProtectedRoute>
+                      <ErrorBoundary>
+                        <Redline />
+                      </ErrorBoundary>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/ai-usage" element={
+                    <ProtectedRoute>
+                      <ErrorBoundary>
+                        <AIUsage />
+                      </ErrorBoundary>
+                    </ProtectedRoute>
+                  } />
 
                   {/* Dashboard redirect to documents */}
                   <Route path="/dashboard" element={
@@ -104,6 +156,17 @@ function App() {
                       <Documents />
                     </ProtectedRoute>
                   } />
+                  {/* === Batch 11 Gaps & Frontend Mounts === */}
+                  <Route path="/gap/ocr-pipeline" element={<GapOcrPipelinePage />} />
+                  <Route path="/gap/pdf-classifier" element={<GapPdfClassifierPage />} />
+                  <Route path="/gap/translation-rag" element={<GapTranslationRagPage />} />
+                  <Route path="/gap/structured-export" element={<GapStructuredExportPage />} />
+                  <Route path="/gap/collaboration-commenting" element={<GapCollaborationCommentingPage />} />
+                  <Route path="/gap/versioning" element={<GapVersioningPage />} />
+                  <Route path="/gap/watermarking-drm" element={<GapWatermarkingDrmPage />} />
+                  <Route path="/gap/batch-processing" element={<GapBatchProcessingPage />} />
+                  <Route path="/gap/esign-integration" element={<GapEsignIntegrationPage />} />
+                  <Route path="/gap/sso-enterprise" element={<GapSsoEnterprisePage />} />
                 </Routes>
                 <Footer />
               </div>

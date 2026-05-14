@@ -49,6 +49,25 @@ class QueueService {
     return redisAvailable;
   }
 
+  /**
+   * Live Redis ping. Returns true if redis responded within 1500ms.
+   * Used by /api/health and the production startup check so the API
+   * never silently returns "queued" without a worker behind it.
+   */
+  async healthCheck() {
+    if (!redisAvailable || !documentQueue) return false;
+    try {
+      const client = documentQueue.client;
+      const result = await Promise.race([
+        client.ping(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('ping timeout')), 1500)),
+      ]);
+      return result === 'PONG';
+    } catch {
+      return false;
+    }
+  }
+
   setupEventHandlers() {
     if (!redisAvailable) return;
 
@@ -181,11 +200,13 @@ class QueueService {
     return stats;
   }
 
-  async getRecentJobs(limit = 20) {
-    return ProcessingJob.findAll({
+  async getRecentJobs(limit = 20, offset = 0) {
+    const { count, rows } = await ProcessingJob.findAndCountAll({
       order: [['created_at', 'DESC']],
-      limit
+      limit,
+      offset,
     });
+    return { data: rows, total: count };
   }
 
   async retryJob(jobId) {

@@ -44,6 +44,11 @@ import Templates from './pages/Templates';
 import Redline from './pages/Redline';
 import AIUsage from './pages/AIUsage';
 
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+import TimelineView from './pages/TimelineView';
+
 function App() {
   return (
     <AuthProvider>
@@ -54,6 +59,10 @@ function App() {
               <div className="app">
                 <Navbar />
                 <Routes>
+        <Route path="/insights/timeline" element={<ProtectedRoute><TimelineView /></ProtectedRoute>} />
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
                   {/* Public routes */}
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />

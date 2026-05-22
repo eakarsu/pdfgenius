@@ -19,6 +19,18 @@ export default defineConfig({
     react()
   ],
 
+  // Some legacy CRA files contain JSX inside .js — tell esbuild to parse them as JSX.
+  esbuild: {
+    loader: 'jsx',
+    include: /src\/.*\.jsx?$/,
+    exclude: []
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      loader: { '.js': 'jsx' }
+    }
+  },
+
   // Mirror CRA's public folder — static files served at root
   publicDir: 'public',
 

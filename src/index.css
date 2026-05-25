@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 /* ============================================
    PDFGenius - Professional Design System
    ============================================ */
@@ -91,9 +93,6 @@
   /* Container */
   --container-max: 1280px;
 }
-
-/* Import Google Font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 /* Reset & Base Styles */
 *, *::before, *::after {

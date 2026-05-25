@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { API_URL } from '../../config/clientEnv';
 import './index.css';
 
 function ForgotPassword() {
@@ -8,8 +9,6 @@ function ForgotPassword() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
   const [resetLink, setResetLink] = useState(null);
-
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
   const handleSubmit = async (e) => {
     e.preventDefault();

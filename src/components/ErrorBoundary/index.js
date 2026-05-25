@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import './index.css';
+import { IS_DEV } from '../../config/clientEnv';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -32,7 +33,7 @@ class ErrorBoundary extends Component {
             <div className="error-boundary-icon">!</div>
             <h2>Something went wrong</h2>
             <p>An unexpected error occurred. Please try again or go back to the home page.</p>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {IS_DEV && this.state.error && (
               <details className="error-boundary-details">
                 <summary>Error Details</summary>
                 <pre>{this.state.error.toString()}</pre>

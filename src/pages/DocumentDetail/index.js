@@ -6,6 +6,7 @@ import { useConfirm } from '../../components/ConfirmDialog/ConfirmContext';
 import DataTable from '../../components/DataTable';
 import DetailModal from '../../components/DetailModal';
 import { DetailSkeleton } from '../../components/Skeleton';
+import { API_URL } from '../../config/clientEnv';
 import './index.css';
 
 function DocumentDetail() {
@@ -45,8 +46,7 @@ function DocumentDetail() {
   const fetchPdfUrl = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-      setPdfUrl(`${apiUrl}/api/documents/${id}/download?token=${token}`);
+      setPdfUrl(`${API_URL}/api/documents/${id}/download?token=${token}`);
     } catch (err) {
       console.error('Failed to get PDF URL:', err);
     }

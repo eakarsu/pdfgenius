@@ -1,8 +1,7 @@
 // src/components/PDFConverter/index.js
 import React, { useState } from 'react';
 import './PDFConverter.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+import { API_URL } from '../../config/clientEnv';
 
 const document_extensions = ['.pdf', '.doc', '.docx', '.docm', '.dot', '.dotx', '.dotm', 
   '.xls', '.xlsx', '.xlsm', '.xlt', '.xltx', '.xltm', '.xlsb',
@@ -194,4 +193,3 @@ export default function DocumentConverter() {
     </div>
   );
 }
-

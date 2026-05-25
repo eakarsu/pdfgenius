@@ -10,6 +10,7 @@ import NewItemModal from '../../components/NewItemModal';
 import { StatCardSkeleton, CardSkeleton } from '../../components/Skeleton';
 import { exportToCSV } from '../../utils/export.util';
 import { exportToPDF } from '../../utils/pdfExport.util';
+import { API_URL } from '../../config/clientEnv';
 import './index.css';
 
 function Documents() {
@@ -116,9 +117,7 @@ function Documents() {
       uploadData.append('processNow', formData.processNow || false);
       if (formData.model) uploadData.append('model', formData.model);
 
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-
-      const response = await fetch(`${apiUrl}/api/documents`, {
+      const response = await fetch(`${API_URL}/api/documents`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: uploadData

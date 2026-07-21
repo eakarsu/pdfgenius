@@ -1,15 +1,13 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME || 'pdfgenius',
-  process.env.DB_USER || 'pdfgenius',
-  process.env.DB_PASSWORD || 'pdfgenius123',
-  {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required; database credential defaults are disabled');
+}
+
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
-    logging: process.env.NODE_ENV === 'development' ? (sql) => console.log(sql) : false,
+    logging: false,
     pool: {
       max: 10,
       min: 0,
@@ -22,8 +20,7 @@ const sequelize = new Sequelize(
       createdAt: 'created_at',
       updatedAt: 'updated_at'
     }
-  }
-);
+  });
 
 // Test connection
 const testConnection = async () => {

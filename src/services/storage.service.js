@@ -19,7 +19,7 @@ if (useCloudStorage) {
     HeadObjectCommand = s3.HeadObjectCommand;
     getSignedUrl = presigner.getSignedUrl;
   } catch (err) {
-    console.log('AWS SDK not available, using local storage');
+    throw new Error('STORAGE_ENABLED is true but the AWS SDK could not be loaded');
   }
 }
 
@@ -29,23 +29,32 @@ class StorageService {
     this.localStoragePath = path.join(__dirname, '../../uploads/storage');
 
     if (this.useCloud) {
+      const required = ['STORAGE_ENDPOINT', 'STORAGE_ACCESS_KEY', 'STORAGE_SECRET_KEY', 'STORAGE_BUCKET'];
+      const missing = required.filter((name) => !process.env[name]);
+      if (missing.length > 0) {
+        throw new Error(`Cloud storage configuration is incomplete: ${missing.join(', ')}`);
+      }
+      const endpoint = new URL(process.env.STORAGE_ENDPOINT);
+      if (!['127.0.0.1', 'localhost', '[::1]'].includes(endpoint.hostname)) {
+        throw new Error('Cloud storage endpoint must use a loopback host');
+      }
       this.client = new S3Client({
-        endpoint: `http://${process.env.STORAGE_ENDPOINT || 'localhost'}:${process.env.STORAGE_PORT || 9000}`,
+        endpoint: endpoint.origin,
         region: 'us-east-1',
         credentials: {
-          accessKeyId: process.env.STORAGE_ACCESS_KEY || 'minioadmin',
-          secretAccessKey: process.env.STORAGE_SECRET_KEY || 'minioadmin'
+          accessKeyId: process.env.STORAGE_ACCESS_KEY,
+          secretAccessKey: process.env.STORAGE_SECRET_KEY
         },
         forcePathStyle: true
       });
-      this.bucket = process.env.STORAGE_BUCKET || 'pdfgenius';
+      this.bucket = process.env.STORAGE_BUCKET;
       console.log('Using cloud storage (MinIO/S3)');
     } else {
       // Ensure local storage directory exists
       if (!fs.existsSync(this.localStoragePath)) {
         fs.mkdirSync(this.localStoragePath, { recursive: true });
       }
-      console.log('Using local file storage at:', this.localStoragePath);
+      console.log('Using isolated local file storage');
     }
   }
 
@@ -54,6 +63,17 @@ class StorageService {
     const timestamp = Date.now();
     const uniqueId = uuidv4().slice(0, 8);
     return `${prefix}/${timestamp}_${uniqueId}${ext}`;
+  }
+
+  resolveLocalPath(storagePath) {
+    if (typeof storagePath !== 'string' || storagePath.length === 0 || path.isAbsolute(storagePath)) {
+      throw new Error('Invalid storage path');
+    }
+    const normalized = path.normalize(storagePath);
+    if (normalized === '..' || normalized.startsWith(`..${path.sep}`)) {
+      throw new Error('Storage path escapes the configured root');
+    }
+    return path.join(this.localStoragePath, normalized);
   }
 
   async uploadFile(localPath, storagePath, contentType = 'application/octet-stream') {
@@ -73,7 +93,7 @@ class StorageService {
       };
     } else {
       // Local storage
-      const destPath = path.join(this.localStoragePath, storagePath);
+      const destPath = this.resolveLocalPath(storagePath);
       const destDir = path.dirname(destPath);
 
       if (!fs.existsSync(destDir)) {
@@ -105,7 +125,7 @@ class StorageService {
         url: this.getPublicUrl(storagePath)
       };
     } else {
-      const destPath = path.join(this.localStoragePath, storagePath);
+      const destPath = this.resolveLocalPath(storagePath);
       const destDir = path.dirname(destPath);
 
       if (!fs.existsSync(destDir)) {
@@ -142,42 +162,67 @@ class StorageService {
       fs.writeFileSync(localPath, buffer);
       return localPath;
     } else {
-      const srcPath = path.join(this.localStoragePath, storagePath);
+      const srcPath = this.resolveLocalPath(storagePath);
       fs.copyFileSync(srcPath, localPath);
       return localPath;
     }
   }
 
-  async getFileBuffer(storagePath) {
+  async getFileBuffer(storagePath, maxBytes) {
+    if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) {
+      throw new Error('A positive download size limit is required');
+    }
     if (this.useCloud) {
+      const head = await this.client.send(new HeadObjectCommand({
+        Bucket: this.bucket,
+        Key: storagePath
+      }));
+      if (!Number.isSafeInteger(head.ContentLength) || head.ContentLength > maxBytes) {
+        throw new Error('Stored object exceeds the download size boundary');
+      }
       const command = new GetObjectCommand({
         Bucket: this.bucket,
         Key: storagePath
       });
       const response = await this.client.send(command);
       const chunks = [];
+      let size = 0;
       for await (const chunk of response.Body) {
+        size += chunk.length;
+        if (size > maxBytes) throw new Error('Stored object exceeds the download size boundary');
         chunks.push(chunk);
       }
       return Buffer.concat(chunks);
     } else {
-      const filePath = path.join(this.localStoragePath, storagePath);
+      const filePath = this.resolveLocalPath(storagePath);
+      const stat = fs.lstatSync(filePath);
+      if (!stat.isFile() || stat.isSymbolicLink() || stat.size > maxBytes) {
+        throw new Error('Stored object is not a bounded regular file');
+      }
       return fs.readFileSync(filePath);
     }
   }
 
   async deleteFile(storagePath) {
     if (this.useCloud) {
+      // S3 DeleteObject is idempotent and can report success for a missing key.
+      // Confirm the retained object exists so callers do not erase provenance
+      // records for data that needs reconciliation.
+      await this.client.send(new HeadObjectCommand({
+        Bucket: this.bucket,
+        Key: storagePath
+      }));
       const command = new DeleteObjectCommand({
         Bucket: this.bucket,
         Key: storagePath
       });
       await this.client.send(command);
     } else {
-      const filePath = path.join(this.localStoragePath, storagePath);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      const filePath = this.resolveLocalPath(storagePath);
+      if (!fs.existsSync(filePath)) {
+        throw new Error('Stored object is missing; deletion requires reconciliation');
       }
+      fs.unlinkSync(filePath);
     }
     return { deleted: true, key: storagePath };
   }
@@ -195,7 +240,7 @@ class StorageService {
         return false;
       }
     } else {
-      const filePath = path.join(this.localStoragePath, storagePath);
+      const filePath = this.resolveLocalPath(storagePath);
       return fs.existsSync(filePath);
     }
   }
@@ -209,17 +254,15 @@ class StorageService {
       return getSignedUrl(this.client, command, { expiresIn });
     } else {
       // Return local file path
-      return path.join(this.localStoragePath, storagePath);
+      return this.resolveLocalPath(storagePath);
     }
   }
 
   getPublicUrl(storagePath) {
     if (this.useCloud) {
-      const endpoint = process.env.STORAGE_ENDPOINT || 'localhost';
-      const port = process.env.STORAGE_PORT || 9000;
-      return `http://${endpoint}:${port}/${this.bucket}/${storagePath}`;
+      return `${process.env.STORAGE_ENDPOINT.replace(/\/$/, '')}/${this.bucket}/${storagePath}`;
     } else {
-      return path.join(this.localStoragePath, storagePath);
+      return this.resolveLocalPath(storagePath);
     }
   }
 

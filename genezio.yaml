@@ -1,12 +1,4 @@
-frontend:
-    path: .
-    publish: build
-    scripts:
-        build:
-            - npm run build
-        deploy:
-            - npm install
-    subdomain: pdfgenius
-name: pdfgenius
-region: us-east-1
-yamlVersion: 2
+# Intentionally not a deployable Genezio project configuration.
+project: pdfgenius
+deployment: disabled
+reason: unsupported-local-prototype

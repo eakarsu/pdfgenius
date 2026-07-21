@@ -1,4 +1,4 @@
-const { Permission } = require('../models');
+const Permission = require('../models/Permission');
 
 // In-memory permission cache
 let permissionCache = null;
@@ -24,7 +24,7 @@ async function loadPermissions() {
     return permissionCache;
   } catch (error) {
     console.error('Failed to load permissions:', error.message);
-    return permissionCache || {};
+    throw new Error('Permission policy is unavailable');
   }
 }
 
@@ -33,27 +33,24 @@ function authorize(resource, action) {
     try {
       const userRole = req.user?.role || 'user';
 
-      // Admin always has access
-      if (userRole === 'admin') {
-        return next();
-      }
-
       const cache = await loadPermissions();
       const key = `${userRole}:${resource}:${action}`;
 
-      // If permission is explicitly denied
-      if (cache[key] === false) {
+      // Missing or unavailable policy data must never grant access.
+      if (cache[key] !== true) {
         return res.status(403).json({
           error: 'Access denied',
           message: `You do not have permission to ${action} ${resource}`
         });
       }
 
-      // Allow by default if no explicit deny
       next();
     } catch (error) {
       console.error('RBAC error:', error);
-      next(); // Fail open
+      res.status(503).json({
+        error: 'Authorization unavailable',
+        message: 'Permission policy could not be evaluated'
+      });
     }
   };
 }

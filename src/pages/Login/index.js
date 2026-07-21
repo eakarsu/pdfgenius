@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../components/AuthContext';
 import './Login.css';
 
@@ -9,8 +9,7 @@ export default function Login() {
   const { login, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    rememberMe: false
+    password: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,16 +23,6 @@ export default function Login() {
       ...prevState,
       [name]: type === 'checkbox' ? checked : value
     }));
-  };
-
-  // Demo login - auto-fill credentials
-  const handleDemoLogin = () => {
-    setFormData({
-      email: 'demo@pdfgenius.com',
-      password: 'demo123',
-      rememberMe: true
-    });
-    setError('');
   };
 
   const handleSubmit = async (e) => {
@@ -62,8 +51,8 @@ export default function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h2>Welcome Back</h2>
-          <p>Sign in to your account to continue</p>
+          <h2>Local prototype sign in</h2>
+          <p>Use only a synthetic account in a disposable environment</p>
         </div>
 
         {error && <div className="login-error">{error}</div>}
@@ -77,8 +66,10 @@ export default function Login() {
               name="email"
               value={formData.email}
               onChange={handleChange}
+              placeholder="reviewer@example.invalid"
+              pattern="[^@\\s]+@[^@\\s]+\\.invalid"
+              maxLength={255}
               required
-              placeholder="Enter your email"
               disabled={isLoading}
             />
           </div>
@@ -91,26 +82,12 @@ export default function Login() {
               name="password"
               value={formData.password}
               onChange={handleChange}
+              minLength={12}
+              maxLength={128}
               required
               placeholder="Enter your password"
               disabled={isLoading}
             />
-          </div>
-
-          <div className="form-options">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                name="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleChange}
-                disabled={isLoading}
-              />
-              Remember me
-            </label>
-            <Link to="/forgot-password" className="forgot-password">
-              Forgot Password?
-            </Link>
           </div>
 
           <button
@@ -122,25 +99,8 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="login-divider">
-          <span>Or</span>
-        </div>
-
-        {/* Demo Login Button */}
-        <button
-          type="button"
-          className="demo-login-button"
-          onClick={handleDemoLogin}
-          disabled={isLoading}
-        >
-          Try Demo Account
-        </button>
-        <p className="demo-hint">
-          Click to auto-fill demo credentials
-        </p>
-
         <div className="login-footer">
-          Don't have an account? <Link to="/signup">Sign up</Link>
+          Accounts must be provisioned by the reviewer in a disposable integration fixture.
         </div>
       </div>
     </div>

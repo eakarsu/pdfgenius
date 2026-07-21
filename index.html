@@ -7,20 +7,18 @@
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
-      content="PDFGenius — AI-powered PDF intelligence platform"
+      content="PDFGenius unsupported local PDF retention prototype"
     />
-    <link rel="manifest" href="/manifest.json" />
-    <title>PDFGenius</title>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src blob:; connect-src 'self' http://localhost:3001 http://127.0.0.1:3001 ws://localhost:* ws://127.0.0.1:*; form-action 'self'"
+    />
+    <title>PDFGenius local prototype</title>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>This unsupported local prototype requires JavaScript.</noscript>
     <div id="root"></div>
-    <!--
-      Entry point for Vite. The module script below loads the React app.
-      pdf.worker is served from /public automatically.
-    -->
+    <!-- Entry point for the local-only Vite prototype. -->
     <script type="module" src="/src/index.js"></script>
   </body>
 </html>

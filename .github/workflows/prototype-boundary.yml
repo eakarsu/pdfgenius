@@ -1,0 +1,64 @@
+name: Prototype boundary
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out full history without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify quarantine controls
+        run: npm run check:boundary
+
+      - name: Run deterministic tests
+        run: npm test
+
+      - name: Verify frontend bundle
+        run: npm run build
+
+      - name: Enforce dependency no-regression baseline
+        run: |
+          npm audit --json > npm-audit.json || true
+          node scripts/check-audit-baseline.js npm-audit.json
+          rm npm-audit.json
+
+      - name: Prepare candidate-content secret scan
+        run: |
+          mkdir -p .gitleaks-candidate
+          git ls-files -z | tar --null -T - -cf - | tar -C .gitleaks-candidate -xf -
+
+      - name: Scan candidate content for secrets
+        run: >-
+          docker run --rm
+          -v "$PWD/.gitleaks-candidate:/scan:ro"
+          zricethezav/gitleaks:v8.30.1
+          dir /scan --redact --no-banner
+
+      - name: Scan commits added after the reviewed snapshot
+        run: >-
+          docker run --rm
+          -v "$PWD:/repo:ro"
+          zricethezav/gitleaks:v8.30.1
+          git /repo --log-opts="f68d8be20f7e642e956c59536a85e8be3a370802..HEAD"
+          --redact --no-banner

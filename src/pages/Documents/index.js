@@ -8,8 +8,6 @@ import SearchBar from '../../components/SearchBar';
 import FilterControls from '../../components/FilterControls';
 import NewItemModal from '../../components/NewItemModal';
 import { StatCardSkeleton, CardSkeleton } from '../../components/Skeleton';
-import { exportToCSV } from '../../utils/export.util';
-import { exportToPDF } from '../../utils/pdfExport.util';
 import { API_URL } from '../../config/clientEnv';
 import './index.css';
 
@@ -26,7 +24,6 @@ function Documents() {
   const [uploading, setUploading] = useState(false);
   const [stats, setStats] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
-  const [selectedIds, setSelectedIds] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({});
@@ -44,12 +41,10 @@ function Documents() {
       });
 
       if (search) params.append('q', search);
-      if (filterParams.status) params.append('status', filterParams.status);
       if (filterParams.dateFrom) params.append('dateFrom', filterParams.dateFrom);
       if (filterParams.dateTo) params.append('dateTo', filterParams.dateTo);
 
-      const endpoint = search || filterParams.status ? '/api/search/documents' : '/api/documents';
-      const response = await authFetch(`${endpoint}?${params}`);
+      const response = await authFetch(`/api/documents?${params}`);
       const data = await response.json();
 
       if (response.ok) {
@@ -114,8 +109,6 @@ function Documents() {
 
       const uploadData = new FormData();
       uploadData.append('file', formData.file);
-      uploadData.append('processNow', formData.processNow || false);
-      if (formData.model) uploadData.append('model', formData.model);
 
       const response = await fetch(`${API_URL}/api/documents`, {
         method: 'POST',
@@ -176,49 +169,6 @@ function Documents() {
     }
   };
 
-  // Handle bulk delete
-  const handleBulkDelete = async (ids) => {
-    const confirmed = await confirm({
-      title: 'Delete Documents',
-      message: `Are you sure you want to delete ${ids.length} document(s)? This action cannot be undone.`,
-      confirmLabel: 'Delete All',
-      variant: 'danger'
-    });
-
-    if (!confirmed) return;
-
-    try {
-      const response = await authFetch('/api/documents/bulk-delete', {
-        method: 'POST',
-        body: JSON.stringify({ ids })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(`${data.deletedCount} document(s) deleted`);
-        setSelectedIds([]);
-        await fetchDocuments();
-        await fetchStats();
-      } else {
-        throw new Error(data.message || 'Bulk delete failed');
-      }
-    } catch (err) {
-      toast.error(err.message);
-    }
-  };
-
-  // Export handlers
-  const handleExportCSV = () => {
-    exportToCSV(documents, exportColumns, 'documents.csv');
-    toast.success('CSV exported');
-  };
-
-  const handleExportPDF = async () => {
-    await exportToPDF(documents, exportColumns, 'Documents', 'documents.pdf');
-    toast.success('PDF exported');
-  };
-
   // Format helpers
   const formatFileSize = (bytes) => {
     if (!bytes) return '-';
@@ -234,14 +184,6 @@ function Documents() {
     });
   };
 
-  const getStatusClass = (status) => {
-    const statusClasses = {
-      pending: 'status-pending', processing: 'status-processing',
-      completed: 'status-completed', failed: 'status-failed'
-    };
-    return statusClasses[status] || 'status-pending';
-  };
-
   // Table columns
   const columns = [
     {
@@ -253,58 +195,27 @@ function Documents() {
         </div>
       )
     },
-    { key: 'status', label: 'Status', type: 'status', width: '120px' },
-    { key: 'total_pages', label: 'Pages', type: 'number', width: '80px', render: (value) => value || '-' },
+    { key: 'id', label: 'State', width: '120px', render: () => 'retained' },
     { key: 'file_size', label: 'Size', type: 'size', width: '100px' },
     { key: 'created_at', label: 'Uploaded', type: 'datetime', width: '180px' }
   ];
 
-  // Export columns (plain text)
-  const exportColumns = [
-    { key: 'original_name', label: 'Name' },
-    { key: 'status', label: 'Status' },
-    { key: 'total_pages', label: 'Pages' },
-    { key: 'file_size', label: 'Size', exportRender: (v) => formatFileSize(v) },
-    { key: 'created_at', label: 'Uploaded', exportRender: (v) => formatDate(v) }
-  ];
-
   // Filter config
   const filterConfig = [
-    {
-      name: 'status', label: 'Status', type: 'select',
-      options: [
-        { value: 'pending', label: 'Pending' },
-        { value: 'processing', label: 'Processing' },
-        { value: 'completed', label: 'Completed' },
-        { value: 'failed', label: 'Failed' }
-      ]
-    },
     { name: 'dateFrom', label: 'From Date', type: 'date' },
     { name: 'dateTo', label: 'To Date', type: 'date' }
   ];
 
   // Upload form fields
   const uploadFields = [
-    { name: 'file', label: 'PDF Document', type: 'file', required: true, accept: '.pdf' },
     {
-      name: 'model', label: 'AI Model', type: 'select',
-      options: [
-        { value: 'anthropic/claude-sonnet-4', label: 'Claude Sonnet 4 (Recommended)' },
-        { value: 'anthropic/claude-haiku-4', label: 'Claude Haiku 4 (Fast)' },
-        { value: 'openai/gpt-4o', label: 'GPT-4o' },
-        { value: 'openai/gpt-4o-mini', label: 'GPT-4o Mini' },
-        { value: 'google/gemini-2.0-flash-001', label: 'Gemini 2.0 Flash' }
-      ]
-    },
-    {
-      name: 'processNow', label: 'Process Immediately', type: 'checkbox',
-      checkboxLabel: 'Start AI processing after upload', defaultValue: true
+      name: 'file',
+      label: 'PDF Document',
+      type: 'file',
+      required: true,
+      accept: 'application/pdf,.pdf',
+      hint: 'PDF only; encrypted PDFs, embedded actions/files, and unscanned uploads are rejected.'
     }
-  ];
-
-  // Bulk actions
-  const bulkActions = [
-    { label: 'Delete Selected', variant: 'danger', onClick: handleBulkDelete }
   ];
 
   return (
@@ -312,15 +223,9 @@ function Documents() {
       <div className="page-header">
         <div>
           <h1>Documents</h1>
-          <p className="page-description">Manage your uploaded documents</p>
+          <p className="page-description">Retain synthetic PDFs in an isolated local environment</p>
         </div>
         <div className="header-actions">
-          <button className="btn-secondary" onClick={handleExportCSV} disabled={documents.length === 0}>
-            Export CSV
-          </button>
-          <button className="btn-secondary" onClick={handleExportPDF} disabled={documents.length === 0}>
-            Export PDF
-          </button>
           <button className="btn-primary" onClick={() => setShowUploadModal(true)}>
             + Upload Document
           </button>
@@ -329,24 +234,12 @@ function Documents() {
 
       {/* Stats Cards */}
       {!stats && loading ? (
-        <StatCardSkeleton count={4} />
+        <StatCardSkeleton count={1} />
       ) : stats && (
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-value">{stats.total}</div>
             <div className="stat-label">Total Documents</div>
-          </div>
-          <div className="stat-card stat-completed">
-            <div className="stat-value">{stats.completed}</div>
-            <div className="stat-label">Completed</div>
-          </div>
-          <div className="stat-card stat-processing">
-            <div className="stat-value">{stats.processing}</div>
-            <div className="stat-label">Processing</div>
-          </div>
-          <div className="stat-card stat-pending">
-            <div className="stat-value">{stats.pending}</div>
-            <div className="stat-label">Pending</div>
           </div>
         </div>
       )}
@@ -423,8 +316,7 @@ function Documents() {
               <div className="card-info">
                 <h4 className="card-title" title={doc.original_name}>{doc.original_name}</h4>
                 <div className="card-meta">
-                  <span className={`card-status ${getStatusClass(doc.status)}`}>{doc.status}</span>
-                  <span className="card-pages">{doc.total_pages ? `${doc.total_pages} pages` : '-'}</span>
+                  <span className="card-status status-pending">retained</span>
                 </div>
                 <div className="card-footer">
                   <span className="card-size">{formatFileSize(doc.file_size)}</span>
@@ -449,10 +341,6 @@ function Documents() {
           pagination={pagination}
           onPageChange={(page) => fetchDocuments(page)}
           emptyMessage="No documents yet. Upload your first document to get started."
-          selectable={true}
-          selectedIds={selectedIds}
-          onSelectedIdsChange={setSelectedIds}
-          bulkActions={bulkActions}
           actions={[]}
           onAction={handleDelete}
         />

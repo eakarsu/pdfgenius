@@ -82,39 +82,6 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Signup function
-  const signup = useCallback(async (email, password, name) => {
-    setError(null);
-    setLoading(true);
-
-    try {
-      const response = await fetch(`${API_URL}/api/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password, name })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Signup failed');
-      }
-
-      localStorage.setItem('token', data.token);
-      setToken(data.token);
-      setUser(data.user);
-
-      return { success: true };
-    } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   // Logout function
   const logout = useCallback(async () => {
     try {
@@ -132,34 +99,6 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('token');
       setToken(null);
       setUser(null);
-    }
-  }, [token]);
-
-  // Update profile
-  const updateProfile = useCallback(async (updates) => {
-    setError(null);
-
-    try {
-      const response = await fetch(`${API_URL}/api/auth/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(updates)
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Update failed');
-      }
-
-      setUser(data.user);
-      return { success: true };
-    } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
     }
   }, [token]);
 
@@ -197,9 +136,7 @@ export function AuthProvider({ children }) {
     error,
     isAuthenticated: !!user,
     login,
-    signup,
     logout,
-    updateProfile,
     authFetch,
     clearError: () => setError(null)
   };

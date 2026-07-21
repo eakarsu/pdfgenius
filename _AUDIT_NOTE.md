@@ -1,5 +1,9 @@
 # Audit Note - pdfgenius
 
+> Superseded by `PROJECT_STATUS.json` on 2026-07-20. The generated gap/demo
+> routes and pages described below were removed from the retained executable
+> boundary because they did not implement durable product behavior.
+
 Source: `_AUDIT/reports/batch_11.md` (lines 305-339).
 
 ## Original Audit Recommendations

@@ -1,15 +1,67 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const { Document, DocumentPage, ProcessingJob } = require('../models');
+const { Op } = require('sequelize');
+const Document = require('../models/Document');
 const { authenticate } = require('../middleware/auth.middleware');
 const { authorize } = require('../middleware/rbac.middleware');
 const storageService = require('../services/storage.service');
-const queueService = require('../services/queue.service');
-const documentService = require('./document.routes'); // Import existing service
+const {
+  MAX_PDF_BYTES,
+  normalizePdfDisplayName,
+  validateStagedPdf,
+} = require('../services/upload-validation.service');
+
+const PUBLIC_DOCUMENT_ATTRIBUTES = [
+  'id',
+  'original_name',
+  'file_size',
+  'mime_type',
+  'metadata',
+  'created_at',
+  'updated_at',
+];
+
+function publicDocument(document) {
+  const value = document.toJSON();
+  const result = Object.fromEntries(
+    PUBLIC_DOCUMENT_ATTRIBUTES
+      .filter((attribute) => Object.prototype.hasOwnProperty.call(value, attribute))
+      .map((attribute) => [attribute, value[attribute]]),
+  );
+  const provenance = value.metadata?.provenance;
+  result.metadata = provenance ? {
+    version: value.metadata.version === 1 ? 1 : null,
+    provenance: {
+      sha256: typeof provenance.sha256 === 'string' && /^[a-f0-9]{64}$/.test(provenance.sha256)
+        ? provenance.sha256
+        : null,
+      byteLength: Number.isSafeInteger(provenance.byteLength) ? provenance.byteLength : null,
+      format: provenance.format === 'pdf' ? 'pdf' : null,
+      validationPolicyVersion: Number.isSafeInteger(provenance.validationPolicyVersion)
+        ? provenance.validationPolicyVersion
+        : null,
+      malwareScan: provenance.malwareScan?.result === 'clean'
+        ? { result: 'clean' }
+        : null,
+      validatedAt: typeof provenance.validatedAt === 'string' ? provenance.validatedAt : null,
+    },
+  } : { version: null, provenance: null };
+  return result;
+}
+
+async function removeStagedFile(filePath) {
+  if (!filePath) return;
+  try {
+    await fs.promises.unlink(filePath);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+}
 
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
@@ -21,8 +73,7 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueName = `${uuidv4()}_${file.originalname}`;
-    cb(null, uniqueName);
+    cb(null, `${uuidv4()}.pdf`);
   }
 });
 
@@ -30,20 +81,12 @@ const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-    ];
-
-    if (allowedTypes.includes(file.mimetype)) {
+    if (file.mimetype === 'application/pdf' && path.extname(file.originalname).toLowerCase() === '.pdf') {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type'));
+      const error = new Error('Only PDF uploads are accepted');
+      error.code = 'INVALID_PDF';
+      cb(error);
     }
   }
 });
@@ -54,43 +97,74 @@ const upload = multer({
  */
 router.get('/', authenticate, async (req, res) => {
   try {
-    const { page = 1, limit = 20, status, sort = 'created_at', order = 'DESC' } = req.query;
-
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const requestedPage = Number.parseInt(req.query.page, 10);
+    const requestedLimit = Number.parseInt(req.query.limit, 10);
+    const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.min(Math.max(requestedLimit, 1), 100)
+      : 20;
+    const allowedSorts = new Set(['created_at', 'updated_at', 'original_name', 'file_size']);
+    const sort = allowedSorts.has(req.query.sort) ? req.query.sort : 'created_at';
+    const order = String(req.query.order || 'DESC').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    const offset = (page - 1) * limit;
     const where = { user_id: req.userId };
 
-    if (status) {
-      where.status = status;
+    if (req.query.q) {
+      where.original_name = { [Op.iLike]: `%${String(req.query.q).slice(0, 200)}%` };
+    }
+    if (req.query.dateFrom || req.query.dateTo) {
+      where.created_at = {};
+      const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom) : null;
+      const dateTo = req.query.dateTo ? new Date(req.query.dateTo) : null;
+      if (dateFrom && !Number.isNaN(dateFrom.getTime())) where.created_at[Op.gte] = dateFrom;
+      if (dateTo && !Number.isNaN(dateTo.getTime())) where.created_at[Op.lte] = dateTo;
     }
 
     const { count, rows } = await Document.findAndCountAll({
+      attributes: PUBLIC_DOCUMENT_ATTRIBUTES,
       where,
-      order: [[sort, order.toUpperCase()]],
-      limit: parseInt(limit),
+      order: [[sort, order]],
+      limit,
       offset,
-      include: [
-        {
-          association: 'pages',
-          attributes: ['id', 'page_number', 'has_tables', 'has_forms']
-        }
-      ]
     });
 
     res.json({
       success: true,
-      documents: rows,
+      documents: rows.map(publicDocument),
       pagination: {
         total: count,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(count / parseInt(limit))
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit)
       }
     });
   } catch (error) {
     console.error('List documents error:', error);
     res.status(500).json({
       error: 'Failed to list documents',
-      message: error.message
+      message: 'Document list is unavailable'
+    });
+  }
+});
+
+/**
+ * GET /api/documents/stats/overview
+ * Get tenant-scoped document statistics for the dashboard. This static route
+ * must be declared before /:id so Express does not interpret "stats" as an id.
+ */
+router.get('/stats/overview', authenticate, async (req, res) => {
+  try {
+    const total = await Document.count({ where: { user_id: req.userId } });
+
+    res.json({
+      success: true,
+      stats: { total }
+    });
+  } catch (error) {
+    console.error('Stats error:', error);
+    res.status(500).json({
+      error: 'Failed to get stats',
+      message: 'Document statistics are unavailable'
     });
   }
 });
@@ -102,16 +176,11 @@ router.get('/', authenticate, async (req, res) => {
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const document = await Document.findOne({
+      attributes: PUBLIC_DOCUMENT_ATTRIBUTES,
       where: {
         id: req.params.id,
         user_id: req.userId
       },
-      include: [
-        { association: 'pages', order: [['page_number', 'ASC']] },
-        { association: 'jobs', order: [['created_at', 'DESC']] },
-        { association: 'tables', order: [['page_number', 'ASC']] },
-        { association: 'formFields', order: [['page_number', 'ASC']] }
-      ]
     });
 
     if (!document) {
@@ -123,13 +192,13 @@ router.get('/:id', authenticate, async (req, res) => {
 
     res.json({
       success: true,
-      document
+      document: publicDocument(document)
     });
   } catch (error) {
     console.error('Get document error:', error);
     res.status(500).json({
       error: 'Failed to get document',
-      message: error.message
+      message: 'Document details are unavailable'
     });
   }
 });
@@ -139,6 +208,8 @@ router.get('/:id', authenticate, async (req, res) => {
  * Upload new document
  */
 router.post('/', authenticate, authorize('documents', 'create'), upload.single('file'), async (req, res) => {
+  let storagePath = null;
+  let document = null;
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -147,96 +218,74 @@ router.post('/', authenticate, authorize('documents', 'create'), upload.single('
       });
     }
 
-    const { processNow = false, model = 'openai/gpt-4o', customPrompt } = req.body;
+    if (req.body.processNow === 'true' || req.body.processNow === true) {
+      await removeStagedFile(req.file.path);
+      return res.status(409).json({
+        error: 'Processing disabled',
+        message: 'AI/OCR processing is outside the retained prototype boundary'
+      });
+    }
 
-    // Create document record
-    const document = await Document.create({
+    const validation = await validateStagedPdf(req.file);
+    const originalName = normalizePdfDisplayName(req.file.originalname);
+    storagePath = storageService.generateStoragePath(originalName, `documents/${req.userId}`);
+    await storageService.uploadFile(req.file.path, storagePath, req.file.mimetype);
+
+    document = await Document.create({
       user_id: req.userId,
-      original_name: req.file.originalname,
+      original_name: originalName,
       file_size: req.file.size,
       mime_type: req.file.mimetype,
+      storage_path: storagePath,
       status: 'pending',
       metadata: {
-        uploadPath: req.file.path,
-        processNow: processNow === 'true' || processNow === true,
-        model,
-        customPrompt
+        version: 1,
+        provenance: {
+          sha256: validation.sha256,
+          byteLength: validation.size,
+          format: validation.format,
+          validationPolicyVersion: validation.policyVersion,
+          malwareScan: validation.malwareScan,
+          validatedAt: validation.validatedAt
+        }
       }
     });
 
-    // Upload to cloud storage
     try {
-      const storagePath = storageService.generateStoragePath(req.file.originalname, `documents/${req.userId}`);
-      await storageService.uploadFile(req.file.path, storagePath, req.file.mimetype);
-      await document.update({ storage_path: storagePath });
-    } catch (storageError) {
-      console.log('Cloud storage not available, using local storage:', storageError.message);
-    }
-
-    // Add to processing queue if requested
-    if (processNow === 'true' || processNow === true) {
-      await queueService.addDocumentJob(document.id, 'convert', {
-        model,
-        customPrompt
-      });
-      await document.update({ status: 'processing' });
+      await removeStagedFile(req.file.path);
+    } catch (cleanupError) {
+      console.error('Upload staging cleanup failed:', cleanupError.message);
     }
 
     res.status(201).json({
       success: true,
-      message: 'Document uploaded successfully',
-      document
+      message: 'Validated PDF retained successfully',
+      document: publicDocument(document)
     });
   } catch (error) {
     console.error('Upload document error:', error);
-    res.status(500).json({
+
+    try { await removeStagedFile(req.file?.path); } catch (cleanupError) {
+      console.error('Upload staging cleanup failed:', cleanupError.message);
+    }
+    if (!document && storagePath) {
+      try { await storageService.deleteFile(storagePath); } catch (cleanupError) {
+        console.error('Stored upload cleanup failed:', cleanupError.message);
+      }
+    }
+
+    const statusByCode = {
+      INVALID_PDF: 400,
+      FILE_TOO_LARGE: 400,
+      UNSAFE_PDF_FEATURE: 422,
+      MALWARE_DETECTED: 422,
+      MALWARE_SCANNER_UNAVAILABLE: 503,
+      MALWARE_SCANNER_ERROR: 503
+    };
+    const status = statusByCode[error.code] || 500;
+    res.status(status).json({
       error: 'Upload failed',
-      message: error.message
-    });
-  }
-});
-
-/**
- * PUT /api/documents/:id
- * Update document metadata
- */
-router.put('/:id', authenticate, async (req, res) => {
-  try {
-    const document = await Document.findOne({
-      where: {
-        id: req.params.id,
-        user_id: req.userId
-      }
-    });
-
-    if (!document) {
-      return res.status(404).json({
-        error: 'Not found',
-        message: 'Document not found'
-      });
-    }
-
-    const allowedUpdates = ['original_name', 'metadata'];
-    const updates = {};
-
-    for (const key of allowedUpdates) {
-      if (req.body[key] !== undefined) {
-        updates[key] = req.body[key];
-      }
-    }
-
-    await document.update(updates);
-
-    res.json({
-      success: true,
-      message: 'Document updated',
-      document
-    });
-  } catch (error) {
-    console.error('Update document error:', error);
-    res.status(500).json({
-      error: 'Update failed',
-      message: error.message
+      message: status === 500 ? 'The upload could not be retained' : error.message
     });
   }
 });
@@ -261,21 +310,16 @@ router.delete('/:id', authenticate, authorize('documents', 'delete'), async (req
       });
     }
 
-    // Delete from cloud storage
-    if (document.storage_path) {
-      try {
-        await storageService.deleteFile(document.storage_path);
-      } catch (err) {
-        console.log('Could not delete from storage:', err.message);
-      }
+    if (!document.storage_path) {
+      return res.status(409).json({
+        error: 'Deletion blocked',
+        message: 'Storage provenance is missing; no database record was removed'
+      });
     }
 
-    // Delete local file if exists
-    if (document.metadata?.uploadPath && fs.existsSync(document.metadata.uploadPath)) {
-      fs.unlinkSync(document.metadata.uploadPath);
-    }
-
-    // Delete document (cascades to pages, tables, form fields)
+    // Fail closed: keep the database record if storage deletion fails so the
+    // storage reference is available for reconciliation and retry.
+    await storageService.deleteFile(document.storage_path);
     await document.destroy();
 
     res.json({
@@ -286,7 +330,7 @@ router.delete('/:id', authenticate, authorize('documents', 'delete'), async (req
     console.error('Delete document error:', error);
     res.status(500).json({
       error: 'Delete failed',
-      message: error.message
+      message: 'Storage and database deletion did not both complete; the record was retained when possible'
     });
   }
 });
@@ -296,46 +340,10 @@ router.delete('/:id', authenticate, authorize('documents', 'delete'), async (req
  * Bulk delete documents
  */
 router.post('/bulk-delete', authenticate, authorize('documents', 'delete'), async (req, res) => {
-  try {
-    const { ids } = req.body;
-
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'ids array is required'
-      });
-    }
-
-    const documents = await Document.findAll({
-      where: {
-        id: ids,
-        user_id: req.userId
-      }
-    });
-
-    // Delete files and documents
-    for (const doc of documents) {
-      if (doc.storage_path) {
-        try { await storageService.deleteFile(doc.storage_path); } catch (e) { /* ignore */ }
-      }
-      if (doc.metadata?.uploadPath && fs.existsSync(doc.metadata.uploadPath)) {
-        fs.unlinkSync(doc.metadata.uploadPath);
-      }
-      await doc.destroy();
-    }
-
-    res.json({
-      success: true,
-      message: `${documents.length} documents deleted`,
-      deletedCount: documents.length
-    });
-  } catch (error) {
-    console.error('Bulk delete error:', error);
-    res.status(500).json({
-      error: 'Bulk delete failed',
-      message: error.message
-    });
-  }
+  res.status(409).json({
+    error: 'Bulk delete disabled',
+    message: 'Use individual deletion so each storage/database result is explicit'
+  });
 });
 
 /**
@@ -343,43 +351,10 @@ router.post('/bulk-delete', authenticate, authorize('documents', 'delete'), asyn
  * Bulk update document status
  */
 router.post('/bulk-update', authenticate, authorize('documents', 'update'), async (req, res) => {
-  try {
-    const { ids, updates } = req.body;
-
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'ids array is required'
-      });
-    }
-
-    const allowedUpdates = ['status', 'metadata'];
-    const filteredUpdates = {};
-    for (const key of allowedUpdates) {
-      if (updates?.[key] !== undefined) {
-        filteredUpdates[key] = updates[key];
-      }
-    }
-
-    const [updatedCount] = await Document.update(filteredUpdates, {
-      where: {
-        id: ids,
-        user_id: req.userId
-      }
-    });
-
-    res.json({
-      success: true,
-      message: `${updatedCount} documents updated`,
-      updatedCount
-    });
-  } catch (error) {
-    console.error('Bulk update error:', error);
-    res.status(500).json({
-      error: 'Bulk update failed',
-      message: error.message
-    });
-  }
+  res.status(409).json({
+    error: 'Bulk update disabled',
+    message: 'Status and provenance metadata are server-managed and immutable'
+  });
 });
 
 /**
@@ -387,6 +362,19 @@ router.post('/bulk-update', authenticate, authorize('documents', 'update'), asyn
  * Queue document for processing
  */
 router.post('/:id/process', authenticate, async (req, res) => {
+  res.status(409).json({
+    error: 'Processing disabled',
+    message: 'AI/OCR processing has no supported provenance and evaluation contract'
+  });
+});
+
+/**
+ * GET /api/documents/:id/download
+ * Get download URL for document
+ * Requires a bearer token in the Authorization header. Query-string tokens are
+ * intentionally rejected because URLs are commonly retained in logs/history.
+ */
+router.get('/:id/download', authenticate, async (req, res) => {
   try {
     const document = await Document.findOne({
       where: {
@@ -402,134 +390,42 @@ router.post('/:id/process', authenticate, async (req, res) => {
       });
     }
 
-    const { model = 'openai/gpt-4o', customPrompt } = req.body;
-
-    const job = await queueService.addDocumentJob(document.id, 'analyze', {
-      model,
-      customPrompt
-    });
-
-    await document.update({ status: 'processing' });
-
-    res.json({
-      success: true,
-      message: 'Document queued for processing',
-      jobId: job.jobId
-    });
-  } catch (error) {
-    console.error('Process document error:', error);
-    res.status(500).json({
-      error: 'Processing failed',
-      message: error.message
-    });
-  }
-});
-
-/**
- * GET /api/documents/:id/download
- * Get download URL for document
- * Supports token in query param for iframe embedding
- */
-router.get('/:id/download', async (req, res) => {
-  try {
-    // Support token from query param (for iframe) or header
-    const token = req.query.token || req.headers.authorization?.replace('Bearer ', '');
-
-    if (!token) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    // Verify token
-    const jwt = require('jsonwebtoken');
-    let userId;
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'pdfgenius-secret-key');
-      userId = decoded.id; // JWT uses 'id' not 'userId'
-    } catch (err) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-
-    const document = await Document.findOne({
-      where: {
-        id: req.params.id,
-        user_id: userId
-      }
-    });
-
-    if (!document) {
+    if (!document.storage_path) {
       return res.status(404).json({
         error: 'Not found',
-        message: 'Document not found'
+        message: 'Stored file is unavailable'
       });
     }
 
-    // Check local file first
-    if (document.metadata?.uploadPath) {
-      // Resolve relative path to absolute
-      const filePath = path.resolve(document.metadata.uploadPath);
-      console.log('Checking file path:', filePath);
-      if (fs.existsSync(filePath)) {
-        return res.download(filePath, document.original_name);
-      }
+    let downloadName;
+    try {
+      downloadName = normalizePdfDisplayName(document.original_name);
+    } catch (error) {
+      return res.status(409).json({
+        error: 'Metadata validation failed',
+        message: 'Stored PDF filename does not satisfy the retained boundary'
+      });
     }
 
-    // Try cloud storage
-    if (document.storage_path) {
-      try {
-        const url = await storageService.getPresignedUrl(document.storage_path);
-        return res.json({
-          success: true,
-          downloadUrl: url
-        });
-      } catch (err) {
-        console.log('Cloud storage error:', err.message);
-      }
+    const buffer = await storageService.getFileBuffer(document.storage_path, MAX_PDF_BYTES);
+    const expectedDigest = document.metadata?.provenance?.sha256;
+    const actualDigest = crypto.createHash('sha256').update(buffer).digest('hex');
+    if (!expectedDigest || actualDigest !== expectedDigest) {
+      return res.status(409).json({
+        error: 'Integrity check failed',
+        message: 'Stored PDF does not match its upload provenance'
+      });
     }
 
-    res.status(404).json({
-      error: 'Not found',
-      message: 'File not available for download'
-    });
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.type('application/pdf');
+    res.attachment(downloadName);
+    res.send(buffer);
   } catch (error) {
     console.error('Download error:', error);
     res.status(500).json({
       error: 'Download failed',
-      message: error.message
-    });
-  }
-});
-
-/**
- * GET /api/documents/stats
- * Get document statistics for dashboard
- */
-router.get('/stats/overview', authenticate, async (req, res) => {
-  try {
-    const { Op } = require('sequelize');
-
-    const [total, pending, processing, completed, failed] = await Promise.all([
-      Document.count({ where: { user_id: req.userId } }),
-      Document.count({ where: { user_id: req.userId, status: 'pending' } }),
-      Document.count({ where: { user_id: req.userId, status: 'processing' } }),
-      Document.count({ where: { user_id: req.userId, status: 'completed' } }),
-      Document.count({ where: { user_id: req.userId, status: 'failed' } })
-    ]);
-
-    res.json({
-      success: true,
-      stats: {
-        total,
-        pending,
-        processing,
-        completed,
-        failed
-      }
-    });
-  } catch (error) {
-    console.error('Stats error:', error);
-    res.status(500).json({
-      error: 'Failed to get stats',
-      message: error.message
+      message: 'The stored PDF could not be retrieved'
     });
   }
 });

@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-07-20",
+  "project": "pdfgenius",
+  "classification": "unsupported-local-prototype",
+  "decision": "retain-local-prototype-quarantine",
+  "production_supported": false,
+  "deployment_allowed": false,
+  "real_data_allowed": false,
+  "distribution_authorization": "not-established",
+  "product_owner": null,
+  "security_patch_owner": null,
+  "source_snapshot": {
+    "commit": "f68d8be20f7e642e956c59536a85e8be3a370802",
+    "branch": "main",
+    "origin_observed": "https://github.com/eakarsu/pdfgenius",
+    "tracked_files_before_boundary": 196
+  },
+  "allowed_uses": [
+    "static-review",
+    "build-verification",
+    "automated-tests",
+    "security-scanning",
+    "isolated-local-evaluation-with-synthetic-data"
+  ],
+  "prohibited_uses": [
+    "production-runtime",
+    "deployment",
+    "real-documents-or-personal-data",
+    "real-credentials",
+    "external-ai-processing",
+    "automatic-schema-alteration",
+    "automatic-seeding",
+    "generated-gap-or-demo-features"
+  ],
+  "narrowed_path": {
+    "name": "authenticated-pdf-retention",
+    "support_status": "evaluation-only",
+    "controls": [
+      "owner-scoped-queries",
+      "loopback-only-http-database-and-storage-endpoints",
+      "reserved-invalid-domain-synthetic-identities",
+      "strict-pdf-extension-and-mime",
+      "pdf-header-trailer-and-active-content-rejection",
+      "required-malware-scan",
+      "sha256-upload-provenance",
+      "download-integrity-verification",
+      "authorization-header-only-download",
+      "storage-path-redaction-from-api-responses",
+      "fail-closed-single-item-deletion"
+    ]
+  },
+  "dependency_audit_baseline": {
+    "critical": 0,
+    "high": 1,
+    "moderate": 3,
+    "low": 0,
+    "total": 4,
+    "policy": "no-regression-only; any known vulnerability still blocks production"
+  },
+  "residual_blockers": [
+    "five redacted Gitleaks findings remain in reachable pre-boundary history",
+    "local ignored environment values must be treated as compromised if ever used",
+    "four known dependency vulnerabilities remain, including one high severity",
+    "no reviewed database migration or rollback chain exists",
+    "no configured malware scanner, account/permission-policy fixture or integration environment is supplied",
+    "JWT logout has no server-side revocation mechanism",
+    "version history, redaction boundaries, retention, legal hold, export and deletion reconciliation are incomplete",
+    "OCR, multilingual/scanned document processing and deterministic output evaluation are unsupported",
+    "queue retries and worker lifecycle are not integration-tested",
+    "repository-wide license and distribution rights are not established"
+  ]
+}

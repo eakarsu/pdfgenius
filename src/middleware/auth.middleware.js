@@ -1,5 +1,5 @@
 const authService = require('../services/auth.service');
-const { User } = require('../models');
+const User = require('../models/User');
 
 /**
  * JWT Authentication Middleware
@@ -48,7 +48,7 @@ const authenticate = async (req, res, next) => {
     console.error('Auth middleware error:', error.message);
     return res.status(401).json({
       error: 'Authentication failed',
-      message: error.message
+      message: 'Invalid or expired session'
     });
   }
 };

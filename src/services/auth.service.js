@@ -1,11 +1,17 @@
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const { User, PasswordResetToken } = require('../models');
-const { Op } = require('sequelize');
+const User = require('../models/User');
+const {
+  normalizeSyntheticEmail,
+  validatePrototypePassword,
+} = require('../config/prototype-data-policy');
 require('dotenv').config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'pdfgenius-secret-key';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = '1h';
+
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET must be configured with at least 32 characters');
+}
 
 class AuthService {
   /**
@@ -35,36 +41,14 @@ class AuthService {
   }
 
   /**
-   * Register new user
-   */
-  async signup({ email, password, name }) {
-    // Check if user exists
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      throw new Error('Email already registered');
-    }
-
-    // Create user (password will be hashed by model hook)
-    const user = await User.create({
-      email,
-      password_hash: password,
-      name
-    });
-
-    const token = this.generateToken(user);
-
-    return {
-      user: user.toSafeJSON(),
-      token
-    };
-  }
-
-  /**
    * Login user
    */
   async login({ email, password }) {
+    const normalizedEmail = normalizeSyntheticEmail(email);
+    validatePrototypePassword(password);
+
     // Find user
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email: normalizedEmail } });
     if (!user) {
       throw new Error('Invalid email or password');
     }
@@ -102,111 +86,6 @@ class AuthService {
     return user.toSafeJSON();
   }
 
-  /**
-   * Update user profile
-   */
-  async updateProfile(id, updates) {
-    const user = await User.findByPk(id);
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Only allow specific fields to be updated
-    const allowedUpdates = ['name', 'email'];
-    const filteredUpdates = {};
-
-    for (const key of allowedUpdates) {
-      if (updates[key] !== undefined) {
-        filteredUpdates[key] = updates[key];
-      }
-    }
-
-    await user.update(filteredUpdates);
-    return user.toSafeJSON();
-  }
-
-  /**
-   * Request password reset
-   */
-  async requestPasswordReset(email) {
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      // Don't reveal whether email exists
-      return { message: 'If an account exists with that email, a reset link has been sent.' };
-    }
-
-    // Invalidate any existing tokens
-    await PasswordResetToken.update(
-      { used: true },
-      { where: { user_id: user.id, used: false } }
-    );
-
-    // Generate token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expires_at = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-    await PasswordResetToken.create({
-      user_id: user.id,
-      token,
-      expires_at
-    });
-
-    return {
-      message: 'If an account exists with that email, a reset link has been sent.',
-      token, // In production, this would be sent via email
-      resetLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`
-    };
-  }
-
-  /**
-   * Reset password using token
-   */
-  async resetPassword(token, newPassword) {
-    const resetToken = await PasswordResetToken.findOne({
-      where: {
-        token,
-        used: false,
-        expires_at: { [Op.gt]: new Date() }
-      }
-    });
-
-    if (!resetToken) {
-      throw new Error('Invalid or expired reset token');
-    }
-
-    const user = await User.findByPk(resetToken.user_id);
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Update password
-    await user.update({ password_hash: newPassword });
-
-    // Mark token as used
-    await resetToken.update({ used: true });
-
-    return { message: 'Password reset successful' };
-  }
-
-  /**
-   * Change password
-   */
-  async changePassword(id, { currentPassword, newPassword }) {
-    const user = await User.findByPk(id);
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Validate current password
-    const isValid = await user.validatePassword(currentPassword);
-    if (!isValid) {
-      throw new Error('Current password is incorrect');
-    }
-
-    // Update password
-    await user.update({ password_hash: newPassword });
-    return { message: 'Password updated successfully' };
-  }
 }
 
 module.exports = new AuthService();

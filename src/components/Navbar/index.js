@@ -41,7 +41,7 @@ export default function Navbar() {
         </Link>
 
         <div className="mobile-menu-icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-          <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+          <span aria-hidden="true">{isMobileMenuOpen ? '\u00d7' : '\u2630'}</span>
         </div>
 
         <ul className={`nav-menu ${isMobileMenuOpen ? 'active' : ''}`}>
@@ -66,50 +66,9 @@ export default function Navbar() {
                   Documents
                 </Link>
               </li>
-              <li className="nav-item dropdown">
-                <span className="nav-link dropdown-trigger">
-                  Tools <i className="fas fa-chevron-down"></i>
-                </span>
-                <ul className="dropdown-menu">
-                  <li>
-                    <Link to="/table-extraction" onClick={() => setIsMobileMenuOpen(false)}>
-                      Table Extraction
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/form-extraction" onClick={() => setIsMobileMenuOpen(false)}>
-                      Form Extraction
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/comparison" onClick={() => setIsMobileMenuOpen(false)}>
-                      Compare Documents
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/ai-analysis" onClick={() => setIsMobileMenuOpen(false)}>
-                      AI Analysis
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/ai-classify" onClick={() => setIsMobileMenuOpen(false)}>
-                      Classify &amp; Compliance
-                    </Link>
-                  </li>
-                </ul>
-              </li>
             </>
           )}
 
-          <li className="nav-item">
-            <Link
-              to="/pricing"
-              className={`nav-link ${location.pathname === '/pricing' ? 'active' : ''}`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Pricing
-            </Link>
-          </li>
         </ul>
 
         <div className="nav-auth">
@@ -123,7 +82,7 @@ export default function Navbar() {
                   {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </span>
                 <span className="user-name">{user?.name || 'User'}</span>
-                <i className="fas fa-chevron-down"></i>
+                <span aria-hidden="true">\u25be</span>
               </button>
 
               {showUserMenu && (
@@ -133,23 +92,17 @@ export default function Navbar() {
                   </div>
                   <div className="dropdown-divider"></div>
                   <Link to="/documents" className="dropdown-item">
-                    <i className="fas fa-folder"></i> My Documents
-                  </Link>
-                  <Link to="/ai-analysis" className="dropdown-item">
-                    <i className="fas fa-robot"></i> AI Analysis
+                    My Documents
                   </Link>
                   <div className="dropdown-divider"></div>
                   <button className="dropdown-item logout" onClick={handleLogout}>
-                    <i className="fas fa-sign-out-alt"></i> Logout
+                    Logout
                   </button>
                 </div>
               )}
             </div>
           ) : (
-            <>
-              <Link to="/login" className="login-btn">Login</Link>
-              <Link to="/signup" className="signup-btn">Sign Up</Link>
-            </>
+            <Link to="/login" className="login-btn">Local sign in</Link>
           )}
         </div>
       </div>

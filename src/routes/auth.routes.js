@@ -8,39 +8,10 @@ const { authenticate } = require('../middleware/auth.middleware');
  * Register new user
  */
 router.post('/signup', async (req, res) => {
-  try {
-    const { email, password, name } = req.body;
-
-    // Validate input
-    if (!email || !password) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Email and password are required'
-      });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Password must be at least 6 characters'
-      });
-    }
-
-    const result = await authService.signup({ email, password, name });
-
-    res.status(201).json({
-      success: true,
-      message: 'Account created successfully',
-      user: result.user,
-      token: result.token
-    });
-  } catch (error) {
-    console.error('Signup error:', error.message);
-    res.status(400).json({
-      error: 'Signup failed',
-      message: error.message
-    });
-  }
+  res.status(503).json({
+    error: 'Account provisioning unavailable',
+    message: 'Use only a reviewer-controlled disposable integration fixture'
+  });
 });
 
 /**
@@ -71,7 +42,7 @@ router.post('/login', async (req, res) => {
     console.error('Login error:', error.message);
     res.status(401).json({
       error: 'Login failed',
-      message: error.message
+      message: 'Invalid synthetic email or password'
     });
   }
 });
@@ -81,11 +52,9 @@ router.post('/login', async (req, res) => {
  * Logout user (client-side token invalidation)
  */
 router.post('/logout', authenticate, (req, res) => {
-  // JWT tokens are stateless, so logout is handled client-side
-  // In production, you might add token to a blacklist
   res.json({
     success: true,
-    message: 'Logout successful'
+    message: 'Client token removal acknowledged; server-side revocation is unavailable'
   });
 });
 
@@ -103,7 +72,7 @@ router.get('/me', authenticate, async (req, res) => {
   } catch (error) {
     res.status(404).json({
       error: 'Not found',
-      message: error.message
+      message: 'Synthetic user was not found'
     });
   }
 });
@@ -113,21 +82,10 @@ router.get('/me', authenticate, async (req, res) => {
  * Update user profile
  */
 router.put('/profile', authenticate, async (req, res) => {
-  try {
-    const { name, email } = req.body;
-    const user = await authService.updateProfile(req.userId, { name, email });
-
-    res.json({
-      success: true,
-      message: 'Profile updated',
-      user
-    });
-  } catch (error) {
-    res.status(400).json({
-      error: 'Update failed',
-      message: error.message
-    });
-  }
+  res.status(503).json({
+    error: 'Profile mutation unavailable',
+    message: 'Account lifecycle is outside the retained prototype boundary'
+  });
 });
 
 /**
@@ -135,38 +93,10 @@ router.put('/profile', authenticate, async (req, res) => {
  * Change password
  */
 router.put('/password', authenticate, async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Current and new passwords are required'
-      });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'New password must be at least 6 characters'
-      });
-    }
-
-    const result = await authService.changePassword(req.userId, {
-      currentPassword,
-      newPassword
-    });
-
-    res.json({
-      success: true,
-      message: result.message
-    });
-  } catch (error) {
-    res.status(400).json({
-      error: 'Password change failed',
-      message: error.message
-    });
-  }
+  res.status(503).json({
+    error: 'Password mutation unavailable',
+    message: 'Account lifecycle is outside the retained prototype boundary'
+  });
 });
 
 /**
@@ -174,34 +104,10 @@ router.put('/password', authenticate, async (req, res) => {
  * Request password reset
  */
 router.post('/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Email is required'
-      });
-    }
-
-    const result = await authService.requestPasswordReset(email);
-
-    res.json({
-      success: true,
-      message: result.message,
-      // In dev mode, return the reset link for testing
-      ...(process.env.NODE_ENV !== 'production' && {
-        resetLink: result.resetLink,
-        token: result.token
-      })
-    });
-  } catch (error) {
-    console.error('Forgot password error:', error.message);
-    res.status(500).json({
-      error: 'Request failed',
-      message: error.message
-    });
-  }
+  res.status(503).json({
+    error: 'Password reset unavailable',
+    message: 'No reviewed private notification channel is configured'
+  });
 });
 
 /**
@@ -209,36 +115,10 @@ router.post('/forgot-password', async (req, res) => {
  * Reset password with token
  */
 router.post('/reset-password', async (req, res) => {
-  try {
-    const { token, newPassword } = req.body;
-
-    if (!token || !newPassword) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Token and new password are required'
-      });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Password must be at least 6 characters'
-      });
-    }
-
-    const result = await authService.resetPassword(token, newPassword);
-
-    res.json({
-      success: true,
-      message: result.message
-    });
-  } catch (error) {
-    console.error('Reset password error:', error.message);
-    res.status(400).json({
-      error: 'Reset failed',
-      message: error.message
-    });
-  }
+  res.status(503).json({
+    error: 'Password reset unavailable',
+    message: 'No reviewed private notification channel is configured'
+  });
 });
 
 /**

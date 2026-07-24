@@ -153,7 +153,7 @@ for (const mount of ['gap-features', "app.use('/api/ai-extras'", "app.use('/api'
   if (server.includes(mount)) fail(`unsupported route is mounted: ${mount}`);
 }
 const apiMounts = [...server.matchAll(/app\.use\('(\/api[^']*)'/g)].map((match) => match[1]);
-if (JSON.stringify(apiMounts) !== JSON.stringify(['/api/auth', '/api/documents'])) {
+if (JSON.stringify(apiMounts) !== JSON.stringify(['/api/auth', '/api/documents', '/api/ai'])) {
   fail(`server route boundary widened: ${apiMounts.join(', ')}`);
 }
 

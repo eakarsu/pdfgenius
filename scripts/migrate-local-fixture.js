@@ -21,6 +21,16 @@ CREATE TABLE IF NOT EXISTS users (
   last_login TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS ai_provider_receipts (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  prompt TEXT NOT NULL CHECK (char_length(prompt) BETWEEN 1 AND 4000),
+  content TEXT NOT NULL CHECK (char_length(content) > 0),
+  provider VARCHAR(32) NOT NULL CHECK (provider = 'openrouter'),
+  provider_request_id VARCHAR(255) NOT NULL,
+  model VARCHAR(255) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );`;
 
 function assertDisposableTarget() {

@@ -22,6 +22,7 @@ const { sequelize, testConnection } = require('./src/config/database');
 // Narrow retained route boundary
 const authRoutes = require('./src/routes/auth.routes');
 const documentsRoutes = require('./src/routes/documents.routes');
+const aiVerificationRoutes = require('./src/routes/ai-verification.routes');
 const { rateLimit } = require('./src/middleware/auth.middleware');
 
 const app = express();
@@ -63,6 +64,7 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // Routes
 app.use('/api/auth', rateLimit({ windowMs: 60000, max: 20 }), authRoutes);
 app.use('/api/documents', documentsRoutes); // Narrow PDF retention path
+app.use('/api/ai', aiVerificationRoutes); // Authenticated synthetic verification path
 
 // Health endpoint reports only the dependency used by the retained path.
 app.get('/api/health', async (req, res) => {
@@ -88,8 +90,9 @@ app.use((error, req, res, next) => {
     return res.status(400).json({ error: error.message });
   }
 
-  console.error('Unhandled error:', error);
-  res.status(500).json({ error: 'Internal server error' });
+  const status = Number.isInteger(error.status) ? error.status : 500;
+  if (status >= 500) console.error('Unhandled error:', error.message);
+  res.status(status).json({ error: status >= 500 ? 'AI service unavailable' : error.message });
 });
 
 // 404 handler

@@ -131,6 +131,12 @@ set -a
 source .env
 set +a
 
+if [ "${ALLOW_DISPOSABLE_SEED:-}" = YES ] && [ "${NODE_ENV:-development}" != production ]; then
+  export VITE_DEMO_EMAIL=runtime-admin@example.invalid
+  export VITE_DEMO_PASSWORD="${PROVISION_ADMIN_PASSWORD:-${ADMIN_PASSWORD:-}}"
+  export VITE_API_URL=
+fi
+
 : "${SERVER_PORT:?SERVER_PORT is required}"
 : "${FRONTEND_PORT:?FRONTEND_PORT is required}"
 [ "$SERVER_PORT" != "$FRONTEND_PORT" ] || { printf 'API and UI ports must be distinct.\n' >&2; exit 2; }
@@ -142,6 +148,7 @@ for port in "$SERVER_PORT" "$FRONTEND_PORT"; do
 done
 
 node scripts/assert-local-prototype.js
+npm run create-admin
 node server.js &
 api_pid=$!
 npm run start -- --port "$FRONTEND_PORT" --strictPort &

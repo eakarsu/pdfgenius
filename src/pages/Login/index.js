@@ -67,7 +67,7 @@ export default function Login() {
               value={formData.email}
               onChange={handleChange}
               placeholder="reviewer@example.invalid"
-              pattern="[^@\\s]+@[^@\\s]+\\.invalid"
+              pattern="[^@ ]+@[^@ ]+[.]invalid"
               maxLength={255}
               required
               disabled={isLoading}

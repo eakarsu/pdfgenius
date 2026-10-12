@@ -15,7 +15,7 @@ function Redline() {
   async function load() {
     const res = await fetch(`/api/redline/${id}`, { headers });
     const data = await res.json();
-    setDecisions(data.decisions || []);
+    setDecisions(Array.isArray(data.decisions) ? data.decisions : []);
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
 

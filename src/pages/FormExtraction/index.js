@@ -23,7 +23,7 @@ function FormExtraction() {
     try {
       const response = await authFetch('/api/documents?status=completed&limit=100');
       const data = await response.json();
-      if (response.ok) setDocuments(data.documents);
+      if (response.ok) setDocuments(Array.isArray(data.documents) ? data.documents : []);
     } catch (err) {
       console.error('Failed to fetch documents:', err);
     } finally {
@@ -39,7 +39,7 @@ function FormExtraction() {
     try {
       const response = await authFetch(`/api/extract/forms/${docId}`);
       const data = await response.json();
-      if (response.ok) setFormFields(data.fields);
+      if (response.ok) setFormFields(Array.isArray(data.fields) ? data.fields : []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -59,8 +59,9 @@ function FormExtraction() {
       const response = await authFetch(`/api/extract/forms/${selectedDocId}`, { method: 'POST' });
       const data = await response.json();
       if (response.ok) {
-        setFormFields(data.fields);
-        toast.success(`${data.fields.length} form field(s) extracted`);
+        const fields = Array.isArray(data.fields) ? data.fields : [];
+        setFormFields(fields);
+        toast.success(`${fields.length} form field(s) extracted`);
       } else {
         throw new Error(data.message || 'Extraction failed');
       }

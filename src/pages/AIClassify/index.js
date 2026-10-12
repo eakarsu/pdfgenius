@@ -1,3 +1,4 @@
+import FormattedAIReport from "../../components/FormattedAIReport";
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../components/AuthContext';
 import { useToast } from '../../components/Toast/ToastContext';
@@ -25,7 +26,7 @@ function AIClassify() {
     try {
       const response = await authFetch('/api/documents?status=completed&limit=100');
       const data = await response.json();
-      if (response.ok) setDocuments(data.documents || []);
+      if (response.ok) setDocuments(Array.isArray(data.documents) ? data.documents : []);
     } catch (err) {
       // ignore
     }
@@ -109,6 +110,22 @@ function AIClassify() {
     }
   };
 
+  const presets = [
+    { label: 'Privacy compliance', mode: 'compliance', frameworks: ['GDPR', 'CCPA'], categories: ['PII'], target: 'Spanish', source: 'English' },
+    { label: 'Healthcare compliance', mode: 'compliance', frameworks: ['HIPAA', 'SOC2'], categories: ['PHI'], target: 'French', source: 'English' },
+    { label: 'Sensitive data', mode: 'redaction', frameworks: ['GDPR'], categories: ['PII', 'Credentials', 'TradeSecrets'], target: 'German', source: 'English' },
+    { label: 'Spanish translation', mode: 'translate', frameworks: ['GDPR'], categories: ['PII'], target: 'Spanish', source: 'English' },
+    { label: 'Document category', mode: 'classify', frameworks: ['GDPR'], categories: ['PII'], target: 'English', source: 'English' }
+  ];
+  const applyPreset = (preset) => {
+    setSelectedDocId((current) => current || (documents[0] ? String(documents[0].id) : ''));
+    setMode(preset.mode);
+    setFrameworks(preset.frameworks);
+    setRedactionCats(preset.categories);
+    setTargetLanguage(preset.target);
+    setSourceLanguage(preset.source);
+  };
+
   return (
     <div className="ai-analysis-page">
       <div className="page-header">
@@ -147,6 +164,12 @@ function AIClassify() {
               <option value="redaction">Redaction Suggestions</option>
             </select>
           </div>
+        </div>
+
+        <div className="prompt-templates">
+          <span className="template-label">Sample tasks:</span>
+          {presets.map((preset) => <button type="button" key={preset.label} onClick={() => applyPreset(preset)} disabled={loading}>{preset.label}</button>)}
+          <small>A document is required. Samples use an available document if none is selected and never run a task.</small>
         </div>
 
         {mode === 'translate' && (
@@ -333,7 +356,7 @@ function AIClassify() {
             )}
             <div className="result-section">
               <h4>Full Response</h4>
-              <pre>{JSON.stringify(result, null, 2)}</pre>
+              <FormattedAIReport response={result} />
             </div>
           </div>
         </div>

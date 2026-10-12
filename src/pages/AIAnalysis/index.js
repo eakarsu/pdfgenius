@@ -1,3 +1,4 @@
+import FormattedAIReport from "../../components/FormattedAIReport";
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../components/AuthContext';
 import { useToast } from '../../components/Toast/ToastContext';
@@ -39,7 +40,7 @@ function AIAnalysis() {
     try {
       const response = await authFetch('/api/documents?status=completed&limit=100');
       const data = await response.json();
-      if (response.ok) setDocuments(data.documents);
+      if (response.ok) setDocuments(Array.isArray(data.documents) ? data.documents : []);
     } catch (err) {
       console.error('Failed to fetch documents:', err);
     }
@@ -50,7 +51,7 @@ function AIAnalysis() {
     try {
       const response = await authFetch('/api/ai/history');
       const data = await response.json();
-      if (response.ok) setHistory(data.history);
+      if (response.ok) setHistory(Array.isArray(data.history) ? data.history : []);
     } catch (err) {
       console.error('Failed to fetch history:', err);
     } finally {
@@ -132,17 +133,18 @@ function AIAnalysis() {
     { key: 'created_at', label: 'Date', type: 'datetime', width: '150px' }
   ];
 
-  const promptTemplates = {
-    summarize: 'Provide a comprehensive summary of this document including key points and main conclusions.',
-    extract: 'Extract all key data points, names, dates, amounts, and other structured information from this document.',
-    analyze: 'Analyze this document and identify: 1) Main themes 2) Key findings 3) Potential issues 4) Recommendations',
-    legal: 'Review this document from a legal perspective. Identify key terms, obligations, risks, and important clauses.',
-    financial: 'Analyze the financial data in this document. Summarize key metrics, trends, and notable figures.'
-  };
+  const presets = [
+    { label: 'Executive summary', type: 'summarize', model: 'anthropic/claude-haiku-4.5', prompt: 'Summarize the purpose, key points, dates, and action items for a busy stakeholder.' },
+    { label: 'Key facts', type: 'extract', model: 'openai/gpt-4o-mini', prompt: 'Extract people, organizations, dates, amounts, obligations, and any missing values.' },
+    { label: 'Risk review', type: 'custom', model: 'anthropic/claude-sonnet-4', prompt: 'Identify key obligations, risks, unusual clauses, and recommended follow-up questions. Cite the relevant passage.' },
+    { label: 'Financial review', type: 'custom', model: 'openai/gpt-4o', prompt: 'Analyze financial figures, trends, discrepancies, and assumptions. Explain any uncertainty.' }
+  ];
 
-  const applyTemplate = (templateKey) => {
-    setPrompt(promptTemplates[templateKey]);
-    setAnalysisType('custom');
+  const applyPreset = (preset) => {
+    setSelectedDocId((current) => current || (documents[0] ? String(documents[0].id) : ''));
+    setModel(preset.model);
+    setAnalysisType(preset.type);
+    setPrompt(preset.prompt);
   };
 
   return (
@@ -187,12 +189,9 @@ function AIAnalysis() {
         </div>
 
         <div className="prompt-templates">
-          <span className="template-label">Quick prompts:</span>
-          <button onClick={() => applyTemplate('summarize')}>Summary</button>
-          <button onClick={() => applyTemplate('extract')}>Extract Data</button>
-          <button onClick={() => applyTemplate('analyze')}>Full Analysis</button>
-          <button onClick={() => applyTemplate('legal')}>Legal Review</button>
-          <button onClick={() => applyTemplate('financial')}>Financial</button>
+          <span className="template-label">Sample analyses:</span>
+          {presets.map((preset) => <button type="button" key={preset.label} onClick={() => applyPreset(preset)} disabled={analyzing}>{preset.label}</button>)}
+          <small>A document is required. Samples use an available document if none is selected and never run analysis.</small>
         </div>
 
         {analysisType === 'custom' && (
@@ -215,24 +214,7 @@ function AIAnalysis() {
             <span className="result-model">{model}</span>
           </div>
           <div className="result-content">
-            {result.summary && (
-              <div className="result-section">
-                <h4>Summary</h4>
-                <p>{result.summary}</p>
-              </div>
-            )}
-            {result.result && (
-              <div className="result-section">
-                <h4>Result</h4>
-                <p>{result.result}</p>
-              </div>
-            )}
-            {result.extractedData && (
-              <div className="result-section">
-                <h4>Extracted Data</h4>
-                <pre>{JSON.stringify(result.extractedData, null, 2)}</pre>
-              </div>
-            )}
+            <FormattedAIReport response={result} />
           </div>
         </div>
       )}
@@ -270,7 +252,7 @@ function AIAnalysis() {
             {selectedHistory.result && (
               <div className="detail-result">
                 <h4>Result</h4>
-                <pre>{JSON.stringify(selectedHistory.result, null, 2)}</pre>
+                <FormattedAIReport response={selectedHistory.result} />
               </div>
             )}
           </div>

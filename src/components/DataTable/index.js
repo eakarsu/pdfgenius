@@ -27,6 +27,7 @@ function DataTable({
   selectedIds = null,
   onSelectedIdsChange
 }) {
+  const rows = Array.isArray(data) ? data : [];
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -40,16 +41,16 @@ function DataTable({
 
   // Filter data based on search (client-side only)
   const filteredData = useMemo(() => {
-    if (serverSearch || !searchTerm) return data;
+    if (serverSearch || !searchTerm) return rows;
 
-    return data.filter(row =>
+    return rows.filter(row =>
       columns.some(col => {
         const value = row[col.key];
         if (value == null) return false;
         return String(value).toLowerCase().includes(searchTerm.toLowerCase());
       })
     );
-  }, [data, searchTerm, columns, serverSearch]);
+  }, [rows, searchTerm, columns, serverSearch]);
 
   // Sort data (client-side only)
   const sortedData = useMemo(() => {

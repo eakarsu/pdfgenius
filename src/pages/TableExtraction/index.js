@@ -25,7 +25,7 @@ function TableExtraction() {
     try {
       const response = await authFetch('/api/documents?limit=100');
       const data = await response.json();
-      if (response.ok) setDocuments(data.documents || []);
+      if (response.ok) setDocuments(Array.isArray(data.documents) ? data.documents : []);
     } catch (err) {
       console.error('Failed to fetch documents:', err);
     } finally {
@@ -41,7 +41,7 @@ function TableExtraction() {
     try {
       const response = await authFetch(`/api/extract/tables/${docId}`);
       const data = await response.json();
-      if (response.ok) setTables(data.tables);
+      if (response.ok) setTables(Array.isArray(data.tables) ? data.tables : []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -61,8 +61,9 @@ function TableExtraction() {
       const response = await authFetch(`/api/extract/tables/${selectedDocId}`, { method: 'POST' });
       const data = await response.json();
       if (response.ok) {
-        setTables(data.tables);
-        toast.success(`${data.tables.length} table(s) extracted`);
+        const tables = Array.isArray(data.tables) ? data.tables : [];
+        setTables(tables);
+        toast.success(`${tables.length} table(s) extracted`);
       } else {
         throw new Error(data.message || 'Extraction failed');
       }

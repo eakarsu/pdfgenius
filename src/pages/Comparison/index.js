@@ -1,3 +1,4 @@
+import FormattedAIReport from "../../components/FormattedAIReport";
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../components/AuthContext';
 import { useToast } from '../../components/Toast/ToastContext';
@@ -29,7 +30,7 @@ function Comparison() {
     try {
       const response = await authFetch('/api/documents?status=completed&limit=100');
       const data = await response.json();
-      if (response.ok) setDocuments(data.documents);
+      if (response.ok) setDocuments(Array.isArray(data.documents) ? data.documents : []);
     } catch (err) {
       console.error('Failed to fetch documents:', err);
     }
@@ -42,7 +43,7 @@ function Comparison() {
       const endpoint = searchQuery ? `/api/search/comparisons${params}` : '/api/compare';
       const response = await authFetch(endpoint);
       const data = await response.json();
-      if (response.ok) setComparisons(data.comparisons);
+      if (response.ok) setComparisons(Array.isArray(data.comparisons) ? data.comparisons : []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -54,6 +55,14 @@ function Comparison() {
     fetchDocuments();
     fetchComparisons();
   }, [fetchDocuments, fetchComparisons]);
+
+  const applyPreset = (type) => {
+    setComparisonType(type);
+    const first = documentA || (documents[0] ? String(documents[0].id) : '');
+    const second = documentB && documentB !== first ? documentB : documents.find((doc) => String(doc.id) !== first)?.id;
+    if (!documentA && first) setDocumentA(first);
+    if (second && documentB !== String(second)) setDocumentB(String(second));
+  };
 
   const handleCompare = async (e) => {
     e.preventDefault();
@@ -214,6 +223,13 @@ function Comparison() {
               </select>
             </div>
           </div>
+          <div className="prompt-templates">
+            <span className="template-label">Sample comparisons:</span>
+            <button type="button" onClick={() => applyPreset('text')} disabled={comparing}>Text changes</button>
+            <button type="button" onClick={() => applyPreset('structural')} disabled={comparing}>Layout changes</button>
+            <button type="button" onClick={() => applyPreset('semantic')} disabled={comparing}>Meaning changes</button>
+            <small>Two distinct documents are required. Samples use available documents and never start a comparison.</small>
+          </div>
           {error && <div className="form-error">{error}</div>}
           <button type="submit" className="btn-primary" disabled={comparing}>
             {comparing ? 'Comparing...' : 'Compare Documents'}
@@ -272,7 +288,7 @@ function Comparison() {
             {selectedComparison.result && (
               <div className="diff-preview">
                 <h4>Analysis Result</h4>
-                <pre>{JSON.stringify(selectedComparison.result, null, 2)}</pre>
+                <FormattedAIReport response={selectedComparison.result} />
               </div>
             )}
           </div>

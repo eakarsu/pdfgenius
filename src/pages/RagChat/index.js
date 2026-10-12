@@ -20,10 +20,10 @@ function RagChat() {
   useEffect(() => {
     fetch('/api/documents?pageSize=100', { headers })
       .then((r) => r.json())
-      .then((d) => setDocs(d.data || d.documents || []));
+      .then((d) => setDocs(Array.isArray(d.documents) ? d.documents : Array.isArray(d.data) ? d.data : []));
     fetch('/api/rag/chats', { headers })
       .then((r) => r.json())
-      .then((d) => setChats(d.data || []));
+      .then((d) => setChats(Array.isArray(d.data) ? d.data : []));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -43,7 +43,7 @@ function RagChat() {
     const res = await fetch(`/api/rag/chats/${id}`, { headers });
     const data = await res.json();
     setActiveChat(data);
-    setMessages(data.messages || []);
+    setMessages(Array.isArray(data.messages) ? data.messages : []);
   }
 
   async function sendQuestion() {
@@ -60,7 +60,7 @@ function RagChat() {
     setBusy(false);
     if (res.ok) {
       const data = await res.json();
-      setMessages((m) => [...m, { role: 'assistant', content: data.answer, citations: data.citations }]);
+      setMessages((m) => [...m, { role: 'assistant', content: data.answer, citations: Array.isArray(data.citations) ? data.citations : [] }]);
     } else {
       const err = await res.json();
       setMessages((m) => [...m, { role: 'assistant', content: `Error: ${err.error}` }]);
@@ -87,6 +87,12 @@ function RagChat() {
                 <span>{d.original_name || d.name || d.id}</span>
               </label>
             ))}
+          </div>
+          <div className="prompt-templates">
+            <span className="template-label">Sample document sets:</span>
+            <button type="button" onClick={() => setSelected((current) => current.length ? current : docs.slice(0, 1).map((doc) => doc.id))}>One document</button>
+            <button type="button" onClick={() => setSelected((current) => current.length ? current : docs.slice(0, 2).map((doc) => doc.id))}>Two documents</button>
+            <small>Available documents are required. Samples keep your selection and never start a chat.</small>
           </div>
           <button onClick={createChat} disabled={selected.length === 0} style={{ marginTop: 16, padding: '8px 16px' }}>
             Start chat
@@ -125,6 +131,12 @@ function RagChat() {
                 )}
               </div>
             ))}
+          </div>
+          <div className="prompt-templates">
+            <span className="template-label">Sample questions:</span>
+            <button type="button" disabled={busy} onClick={() => setQuestion('What are the key obligations and their deadlines?')}>Obligations</button>
+            <button type="button" disabled={busy} onClick={() => setQuestion('Which facts differ across these documents? Cite each source.')}>Differences</button>
+            <button type="button" disabled={busy} onClick={() => setQuestion('Summarize the main risks and cite supporting passages.')}>Risks</button>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <input

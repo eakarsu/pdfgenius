@@ -48,7 +48,8 @@ function Documents() {
       const data = await response.json();
 
       if (response.ok) {
-        setDocuments(data.documents || []);
+        if (!Array.isArray(data.documents)) throw new Error('Invalid documents response');
+        setDocuments(data.documents);
         setPagination(data.pagination);
       } else {
         throw new Error(data.message || 'Failed to fetch documents');

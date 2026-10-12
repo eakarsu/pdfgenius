@@ -16,7 +16,7 @@ function Templates() {
   async function load() {
     const r = await fetch(`/api/templates?page=${page}&pageSize=20`, { headers });
     const d = await r.json();
-    setTemplates(d.data || []);
+    setTemplates(Array.isArray(d.data) ? d.data : []);
     setTotalPages(d.totalPages || 1);
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [page]);

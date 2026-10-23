@@ -9,6 +9,7 @@ import FilterControls from '../../components/FilterControls';
 import NewItemModal from '../../components/NewItemModal';
 import { StatCardSkeleton, CardSkeleton } from '../../components/Skeleton';
 import { API_URL } from '../../config/clientEnv';
+import FeaturePackPanel from '../../components/FeaturePackPanel';
 import './index.css';
 
 function Documents() {
@@ -359,6 +360,8 @@ function Documents() {
           </button>
         </div>
       )}
+
+      <FeaturePackPanel documents={documents} />
 
       {/* Upload Modal */}
       <NewItemModal

@@ -91,15 +91,6 @@ export default function Login() {
           </div>
 
           <button
-            type="button"
-            onClick={() => setFormData((current) => ({ ...current, email: import.meta.env.VITE_DEMO_EMAIL || '', password: import.meta.env.VITE_DEMO_PASSWORD || '' }))}
-            disabled={!import.meta.env.VITE_DEMO_EMAIL || !import.meta.env.VITE_DEMO_PASSWORD}
-            aria-label="Fill demo credentials"
-            style={{ width: '100%', marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
-          >
-            Fill demo credentials
-          </button>
-          <button
             type="submit"
             className="login-button"
             disabled={isLoading}
@@ -109,7 +100,7 @@ export default function Login() {
         </form>
 
         <div className="login-footer">
-          Demo autofill requires VITE_DEMO_EMAIL and VITE_DEMO_PASSWORD in the local client configuration. Accounts must be provisioned by the reviewer in a disposable integration fixture.
+          Sign in with an account provisioned by the reviewer in a disposable integration fixture.
         </div>
       </div>
     </div>

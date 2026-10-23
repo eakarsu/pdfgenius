@@ -1,0 +1,8 @@
+'use strict';
+const test = require('node:test'); const assert = require('node:assert/strict');
+const { createTaskStore, toCsv, DOCUMENT_COLUMNS, documentSummary, documentQa, documentKeyFields } = require('../src/services/wave1b.service');
+test('review tasks owner-scoped create/list/update', () => { const s = createTaskStore(); const t = s.create('u1', { title: 'Check totals', documentId: 'd1' }); assert.equal(s.list('u1').length, 1); assert.equal(s.list('u2').length, 0); assert.equal(s.update('u1', t.id, { status: 'done' }).status, 'done'); });
+test('document csv preserves 0/false', () => { assert.match(toCsv([{ original_name: 'A,B.pdf', status: 0, total_pages: 0, file_size: false }], DOCUMENT_COLUMNS.slice(0, 4)), /"A,B\.pdf",0,0,false/); });
+test('deterministic document fallbacks labelled and grounded', () => { const pages = [{ extracted_text: 'Revenue rose in Q1. Costs fell sharply.' }]; const s = documentSummary({ total_pages: 1, status: 'completed' }, pages); assert.equal(s.aiGenerated, false); assert.match(s.sections.summary, /Revenue rose/); assert.equal(s.sections.metrics.hasExtractedText, true); const q = documentQa({}, pages, 'revenue'); assert.equal(q.sections.metrics.matchedSentences, 1); });
+
+test('key-fields fallback extracts emails/amounts/dates preserving 0/false', () => { const k = documentKeyFields({ original_name: 'Invoice.pdf' }, [{ extracted_text: 'Pay $1,250.00 by 2024-03-01. Contact a@b.co.' }]); assert.equal(k.aiGenerated, false); assert.equal(k.sections.metrics.emails, 1); assert.equal(k.sections.metrics.amounts, 1); assert.equal(k.sections.metrics.hasContactEmail, true); assert.equal(documentKeyFields({}, [{ extracted_text: 'No fields here.' }]).sections.metrics.hasContactEmail, false); });
